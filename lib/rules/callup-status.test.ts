@@ -39,7 +39,7 @@ describe("getSubscribeEligibility", () => {
       waitList: true,
       waitListThreshold: 6,
       waitlistCount: 2,
-      status: CallupStatusValue.Open as const,
+      status: CallupStatusValue.Open,
     };
     expect(getSubscribeEligibility(input)).toEqual({
       canJoinRoster: false,

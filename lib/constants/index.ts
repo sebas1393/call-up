@@ -26,4 +26,3 @@ export {
   CALLUP_STATUS_LABELS_ES,
   CallupStatusValue,
 } from "@/lib/constants/status";
-export { ErrorCode, type ErrorCode } from "@/lib/constants/error-codes";
