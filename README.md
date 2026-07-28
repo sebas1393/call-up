@@ -1,8 +1,8 @@
-# Call Up
+# Kortumo
 
-Football callups for Colombia: callers create matches; players join via a public `/{username}` channel. WhatsApp-style roster with waitlist, Realtime toasts, and PWA Web Push.
+Football callups for Colombia — product brand **Kortumo** (mark **K**). Callers create matches; players join via `/{username}`. Working package folder: `call-up/`.
 
-App code lives in this folder (`call-up/`). Product docs live one level up in the repo root.
+Brand source: [`Brandbook-KORTUMO.pdf`](../Brandbook-KORTUMO.pdf) · [`docs/brand.md`](docs/brand.md)
 
 ## Docs (source of truth)
 
@@ -10,9 +10,10 @@ App code lives in this folder (`call-up/`). Product docs live one level up in th
 |-----|---------|
 | [`../constitution.md`](../constitution.md) | Engineering constraints |
 | [`../spec.md`](../spec.md) | Product + API contract (§9) |
-| [`../plan.md`](../plan.md) | Architecture / stack |
-| [`../tasks.md`](../tasks.md) | Implementation tasks |
-| [`docs/api.md`](docs/api.md) | Concise `/api/v1` map (auth levels) |
+| [`../plan.md`](../plan.md) | Architecture / brand §0 / Phase 4 UI |
+| [`../tasks.md`](../tasks.md) | Implementation tasks (incl. UI 17–21) |
+| [`docs/brand.md`](docs/brand.md) | Kortumo palette / type / assets |
+| [`docs/api.md`](docs/api.md) | Concise `/api/v1` map |
 | [`docs/local-setup.md`](docs/local-setup.md) | Supabase, Google OAuth, VAPID |
 | [`docs/coverage.md`](docs/coverage.md) | Domain coverage gate |
 
@@ -44,7 +45,8 @@ See [`docs/local-setup.md`](docs/local-setup.md) for Google OAuth, Supabase sche
 - **Next.js** App Router (UI + Route Handlers)
 - **Supabase** Auth (Google), Postgres, RLS, Realtime `postgres_changes`
 - **Zod** validators, Problem Details errors
-- **PWA:** Next official `app/manifest` + manual `public/sw.js` (no Serwist / next-pwa) — Task 15
+- **PWA:** Next official `app/manifest` + manual `public/sw.js` (no Serwist / next-pwa)
+- **Brand:** Kortumo (K) — navy `#003366`, CTA red `#cc3333`
 
 ## Repo layout
 

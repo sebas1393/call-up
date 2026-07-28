@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Kortumo">
+  <!-- Mark grounded in court-line geometry (brandbook: encuentro / canchas) -->
+  <rect width="128" height="128" rx="24" fill="#003366"/>
+  <rect x="14" y="14" width="100" height="100" rx="8" fill="none" stroke="#6699ff" stroke-width="3" opacity="0.55"/>
+  <path
+    fill="#ffffff"
+    d="M40 28h18v28.5L82 28h22L70 64l36 36H84L58 71.5V100H40V28z"
+  />
+  <circle cx="98" cy="98" r="8" fill="#cc3333"/>
+</svg>

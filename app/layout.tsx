@@ -1,27 +1,30 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Montserrat, Open_Sans } from "next/font/google";
 
 import { RegisterServiceWorker } from "@/components/pwa/register-service-worker";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/** Brandbook stand-ins: titles → Montserrat; body → Open Sans (Aharoni/Myriad pending license). */
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
+  weight: ["300", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const openSans = Open_Sans({
+  variable: "--font-open-sans",
   subsets: ["latin"],
+  weight: ["400", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "Call Up",
+  title: "Kortumo",
   description:
-    "Convocatorias de fútbol: crea partidos, suscríbete y recibe avisos.",
-  applicationName: "Call Up",
+    "Convocatorias deportivas: crea partidos, suscríbete y recibe avisos.",
+  applicationName: "Kortumo",
   appleWebApp: {
     capable: true,
-    title: "Call Up",
+    title: "Kortumo",
     statusBarStyle: "default",
   },
   formatDetection: {
@@ -37,9 +40,9 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${montserrat.variable} ${openSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col font-sans">
         <RegisterServiceWorker />
         {children}
       </body>

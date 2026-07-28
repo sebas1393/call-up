@@ -130,7 +130,7 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
         type="button"
         disabled={busy}
         onClick={following ? onUnfollow : onFollow}
-        className="inline-flex h-11 items-center justify-center rounded-md bg-[#1a7f4b] px-4 text-sm font-medium text-white transition-opacity disabled:opacity-60"
+        className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--kortumo-navy)] px-4 text-sm font-medium text-white transition-opacity hover:bg-[var(--kortumo-blue-soft)] disabled:opacity-60"
         aria-busy={busy}
       >
         {busy ? "…" : following ? "No Seguir" : "Seguir"}

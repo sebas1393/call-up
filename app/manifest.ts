@@ -1,19 +1,19 @@
 import type { MetadataRoute } from "next";
 
 /**
- * Web App Manifest (Next.js official PWA pattern).
+ * Web App Manifest — Kortumo (Brandbook-KORTUMO).
  * @see https://nextjs.org/docs/app/guides/progressive-web-apps
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Call Up",
-    short_name: "Call Up",
+    name: "Kortumo",
+    short_name: "Kortumo",
     description:
-      "Convocatorias de fútbol: crea partidos, suscríbete y recibe avisos.",
+      "Convocatorias deportivas: crea partidos, suscríbete y recibe avisos.",
     start_url: "/",
     display: "standalone",
-    background_color: "#0f1a14",
-    theme_color: "#1a7f4b",
+    background_color: "#003366",
+    theme_color: "#003366",
     lang: "es-CO",
     icons: [
       {
