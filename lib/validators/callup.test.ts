@@ -3,6 +3,7 @@ import {
   DEFAULT_SPOTS_BY_COURT_TYPE,
 } from "@/lib/constants/callup";
 import {
+  callupsMineQuerySchema,
   courtSearchQuerySchema,
   createCallupBodySchema,
   createCourtBodySchema,
@@ -97,6 +98,21 @@ describe("updateCallupBodySchema", () => {
     if (parsed.success) {
       expect(parsed.data).not.toHaveProperty("waitList");
     }
+  });
+});
+
+describe("callupsMineQuerySchema", () => {
+  it("defaults pageIndex=0 and pageSize=10", () => {
+    expect(callupsMineQuerySchema.parse({})).toEqual({
+      pageIndex: 0,
+      pageSize: 10,
+    });
+  });
+
+  it("accepts optional status filter", () => {
+    expect(
+      callupsMineQuerySchema.parse({ pageIndex: "1", pageSize: "5", status: "Full" }),
+    ).toEqual({ pageIndex: 1, pageSize: 5, status: "Full" });
   });
 });
 

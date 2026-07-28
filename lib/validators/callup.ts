@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  CALLUPS_PAGE_SIZE_DEFAULT,
   CALLUP_STATUSES,
   COURT_ADDRESS_MAX_LENGTH,
   COURT_NAME_MAX_LENGTH,
@@ -95,3 +96,19 @@ export const updateCallupBodySchema = z.object({
 export type UpdateCallupBody = z.infer<typeof updateCallupBodySchema>;
 
 export const callupStatusSchema = z.enum(CALLUP_STATUSES);
+
+/**
+ * GET /callups/mine query (page size default 10).
+ */
+export const callupsMineQuerySchema = z.object({
+  pageIndex: z.coerce.number().int().min(0).default(0),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(50)
+    .default(CALLUPS_PAGE_SIZE_DEFAULT),
+  status: callupStatusSchema.optional(),
+});
+
+export type CallupsMineQuery = z.infer<typeof callupsMineQuerySchema>;
