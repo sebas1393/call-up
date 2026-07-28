@@ -66,13 +66,11 @@ npm run test:coverage
 
 ## PWA (Tasks 15–16)
 
-Planned approach (no Serwist / next-pwa):
+Approach (no Serwist / next-pwa) — see [Next.js PWA guide](https://nextjs.org/docs/app/guides/progressive-web-apps):
 
-1. **`app/manifest.ts`** — `name`, `short_name`, icons 192/512, `display: "standalone"`, `start_url`.
-2. **`public/sw.js`** — handle `push` (show notification from JSON `title` / `body` / `url`) and `notificationclick` (focus/open `data.url` or `/`).
-3. Client registers `/sw.js`; on **Seguir** success request notification permission and `POST /api/v1/me/push-subscription`.
-
-Until Task 15 lands, the API push-subscription endpoints already exist; the SW/manifest files are the missing install surface.
+1. **`app/manifest.ts`** — `name`, `short_name`, icons 192/512, `display: "standalone"`, `start_url` (**Task 15 done**).
+2. **`public/sw.js`** — `push` shows notification from JSON (`title`, `body`, `url`); `notificationclick` focuses/opens `data.url` or `/` (**Task 15 done**).
+3. **Task 16:** client registers `/sw.js`; on **Seguir** success request notification permission and `POST /api/v1/me/push-subscription`.
 
 ## Troubleshooting
 
