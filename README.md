@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Tests
+
+Canonical test command (constitution):
+
+```bash
+npm test
+```
+
+Uses Jest. Domain/unit tests live under `lib/` (colocated `*.test.ts`) or `__tests__/`.
+
 ## Getting Started
 
 First, run the development server:
