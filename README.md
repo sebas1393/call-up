@@ -1,46 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Call Up
 
-## Tests
+Football callups for Colombia: callers create matches; players join via a public `/{username}` channel. WhatsApp-style roster with waitlist, Realtime toasts, and PWA Web Push.
 
-Canonical test command (constitution):
+App code lives in this folder (`call-up/`). Product docs live one level up in the repo root.
+
+## Docs (source of truth)
+
+| Doc | Purpose |
+|-----|---------|
+| [`../constitution.md`](../constitution.md) | Engineering constraints |
+| [`../spec.md`](../spec.md) | Product + API contract (§9) |
+| [`../plan.md`](../plan.md) | Architecture / stack |
+| [`../tasks.md`](../tasks.md) | Implementation tasks |
+| [`docs/api.md`](docs/api.md) | Concise `/api/v1` map (auth levels) |
+| [`docs/local-setup.md`](docs/local-setup.md) | Supabase, Google OAuth, VAPID |
+| [`docs/coverage.md`](docs/coverage.md) | Domain coverage gate |
+
+**API contract:** always prefer [`spec.md` §9](../spec.md) over this README.
+
+## Setup
 
 ```bash
-npm test
-```
-
-Uses Jest. Domain/unit tests live under `lib/` (colocated `*.test.ts`) or `__tests__/`.
-
-## Getting Started
-
-First, run the development server:
-
-```bash
+cd call-up
+cp .env.example .env.local   # fill values — never commit secrets
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+See [`docs/local-setup.md`](docs/local-setup.md) for Google OAuth, Supabase schema, and VAPID keys.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Next.js dev server |
+| `npm test` | Jest unit tests |
+| `npm run test:coverage` | Jest + ≥80% gate on rules/validators/services |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
 
-## Learn More
+## Stack (short)
 
-To learn more about Next.js, take a look at the following resources:
+- **Next.js** App Router (UI + Route Handlers)
+- **Supabase** Auth (Google), Postgres, RLS, Realtime `postgres_changes`
+- **Zod** validators, Problem Details errors
+- **PWA:** Next official `app/manifest` + manual `public/sw.js` (no Serwist / next-pwa) — Task 15
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Repo layout
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+call-up/                 # this package
+  app/api/v1/            # HTTP API
+  lib/                   # rules, validators, services, db, notify
+  docs/                  # package-local docs
+../spec.md               # product + API
+../constitution.md
+```
