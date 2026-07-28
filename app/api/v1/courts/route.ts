@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/db/supabase-server";
 import {
   normalizeCourtName,
   toCourtDto,
+  ensureCallerCourtLink,
   type CourtRow,
 } from "@/lib/services/courts";
 import {
@@ -148,10 +149,14 @@ export async function POST(request: Request) {
     });
   }
 
-  await supabase.from("caller_courts").upsert(
-    { caller_user_id: userId, court_id: court.id },
-    { onConflict: "caller_user_id,court_id" },
-  );
+  const linked = await ensureCallerCourtLink(supabase, userId, court.id);
+  if (!linked.ok) {
+    return jsonProblem({
+      status: 500,
+      title: "Internal Server Error",
+      detail: "Oops, algo salió mal",
+    });
+  }
 
   return jsonData(toCourtDto(court as CourtRow), { status: 201 });
 }

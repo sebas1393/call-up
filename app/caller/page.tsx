@@ -1,10 +1,11 @@
 import Link from "next/link";
 
 import { CallerHeader } from "@/components/caller/caller-header";
+import { CallerShareLink } from "@/components/caller/caller-share-link";
 import { CallupSummaryList } from "@/components/callup/callup-summary-list";
 
 /**
- * Caller dashboard — mine callups (US-004).
+ * Caller dashboard — mine callups (US-004) + share link (US-007).
  */
 export default function CallerDashboardPage() {
   return (
@@ -22,6 +23,7 @@ export default function CallerDashboardPage() {
             + Crear
           </Link>
         </div>
+        <CallerShareLink />
         <CallupSummaryList />
       </main>
     </div>

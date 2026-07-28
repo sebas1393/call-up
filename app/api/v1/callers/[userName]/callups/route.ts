@@ -1,5 +1,5 @@
 import { ErrorCode } from "@/lib/constants/error-codes";
-import { jsonData, jsonProblem, unauthorized } from "@/lib/api/http";
+import { jsonData, jsonProblem } from "@/lib/api/http";
 import { createSupabaseServerClient } from "@/lib/db/supabase-server";
 import {
   countPlayers,
@@ -7,36 +7,52 @@ import {
   type CallupRow,
 } from "@/lib/services/callups";
 import { callupsMineQuerySchema } from "@/lib/validators/callup";
+import { USERNAME_PATTERN } from "@/lib/constants/callup";
 
 const CALLUP_SELECT =
   "id, caller, court_id, court_type, match_at, spots_quantity, wait_list, wait_list_threshold, payment_key, status, created_at" as const;
 
-/**
- * GET /api/v1/callups/mine — caller dashboard only; newest first; pageSize default 10.
- */
-export async function GET(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+type RouteContext = { params: Promise<{ userName: string }> };
 
-  if (authError || !user) {
-    return unauthorized();
+/**
+ * GET /api/v1/callers/{userName}/callups — public channel list (anon OK).
+ * Never returns email/phone.
+ */
+export async function GET(request: Request, context: RouteContext) {
+  const { userName: raw } = await context.params;
+  const userName = raw.trim().toLowerCase();
+
+  if (!USERNAME_PATTERN.test(userName) || userName.length < 5 || userName.length > 10) {
+    return jsonProblem({
+      status: 404,
+      title: "Not Found",
+      detail: "No se encontró el usuario del caller.",
+      code: ErrorCode.NOT_FOUND,
+    });
   }
 
-  const { data: me } = await supabase
-    .from("users")
-    .select("user_name")
-    .eq("id", user.id)
+  const supabase = await createSupabaseServerClient();
+
+  const { data: channel, error: channelError } = await supabase
+    .from("callup_channels")
+    .select("caller_user_id, user_name")
+    .eq("user_name", userName)
     .maybeSingle();
 
-  if (!me?.user_name) {
+  if (channelError) {
     return jsonProblem({
-      status: 403,
-      title: "Forbidden",
-      detail: "Debes configurar tu usuario de caller para ver tus convocatorias.",
-      code: ErrorCode.FORBIDDEN,
+      status: 500,
+      title: "Internal Server Error",
+      detail: "Oops, algo salió mal",
+    });
+  }
+
+  if (!channel) {
+    return jsonProblem({
+      status: 404,
+      title: "Not Found",
+      detail: "No se encontró el usuario del caller.",
+      code: ErrorCode.NOT_FOUND,
     });
   }
 
@@ -44,37 +60,31 @@ export async function GET(request: Request) {
   const parsed = callupsMineQuerySchema.safeParse({
     pageIndex: url.searchParams.get("pageIndex") ?? undefined,
     pageSize: url.searchParams.get("pageSize") ?? undefined,
-    status: url.searchParams.get("status") ?? undefined,
   });
 
   if (!parsed.success) {
     return jsonProblem({
       status: 400,
       title: "Bad Request",
-      detail: parsed.error.issues[0]?.message ?? "Parámetros de paginación inválidos.",
+      detail:
+        parsed.error.issues[0]?.message ?? "Parámetros de paginación inválidos.",
       code: ErrorCode.VALIDATION_ERROR,
     });
   }
 
-  const { pageIndex, pageSize, status } = parsed.data;
+  const { pageIndex, pageSize } = parsed.data;
   const from = pageIndex * pageSize;
   const to = from + pageSize - 1;
 
-  let query = supabase
+  const { data, error, count } = await supabase
     .from("callups")
     .select(
-      `${CALLUP_SELECT}, courts!inner ( name, address ), players ( is_wait_list )`,
+      `${CALLUP_SELECT}, courts ( name, address ), players ( is_wait_list )`,
       { count: "exact" },
     )
-    .eq("caller", user.id)
+    .eq("caller", channel.caller_user_id)
     .order("created_at", { ascending: false })
     .range(from, to);
-
-  if (status) {
-    query = query.eq("status", status);
-  }
-
-  const { data, error, count } = await query;
 
   if (error) {
     return jsonProblem({
@@ -86,8 +96,8 @@ export async function GET(request: Request) {
 
   const items = (data ?? []).map((row) => {
     const courtRaw = row.courts as
-      | { name: string; address?: string }
-      | { name: string; address?: string }[]
+      | { name: string; address: string }
+      | { name: string; address: string }[]
       | null;
     const court = Array.isArray(courtRaw) ? courtRaw[0] : courtRaw;
     const callup: CallupRow = {
@@ -116,6 +126,7 @@ export async function GET(request: Request) {
   });
 
   return jsonData({
+    userName: channel.user_name,
     items,
     pageIndex,
     pageSize,

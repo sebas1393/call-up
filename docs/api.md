@@ -73,9 +73,8 @@ This file is a concise inventory of implemented Route Handlers (Tasks 8–12). S
 ## Not yet as REST (by design / later tasks)
 
 - Global list of all callups or all users — **forbidden** (spec §10).
-- Channel public list `GET /callers/{userName}/callups` — in spec; implement with UI Phase.
 - Web Push **send** fan-out (`web-push` + VAPID private) — approved; wire when installing send path (Task 16+).
-- Realtime toasts — Supabase `postgres_changes` on client (not custom REST).
+- Realtime toasts — Supabase `postgres_changes` on client (not custom REST). **Client hook not wired yet.** Until then: Jest covers notify rules (`lib/notify/recipients`); E2E toast asserts come after the hook. See [local-setup.md — Realtime toasts](./local-setup.md#realtime-toasts).
 
 ## PWA approach (documented for Task 14/15)
 

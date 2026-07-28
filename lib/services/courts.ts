@@ -2,6 +2,8 @@
  * Court domain helpers (US-003b): normalize name, DTO mapping, ownership.
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export type CourtRow = {
   id: string;
   name: string;
@@ -36,6 +38,26 @@ export function toCourtDto(row: CourtRow): CourtDto {
     address: row.address,
     createdBy: row.created_by,
   };
+}
+
+/**
+ * Ensures caller_courts row exists (idempotent). Uses INSERT + ignore unique
+ * conflict so RLS does not require UPDATE (upsert ON CONFLICT UPDATE fails without it).
+ */
+export async function ensureCallerCourtLink(
+  supabase: SupabaseClient,
+  callerUserId: string,
+  courtId: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { error } = await supabase.from("caller_courts").insert({
+    caller_user_id: callerUserId,
+    court_id: courtId,
+  });
+
+  if (error && error.code !== "23505") {
+    return { ok: false, message: error.message };
+  }
+  return { ok: true };
 }
 
 export type CourtOwnerDecision =

@@ -95,9 +95,19 @@ export function CallerHeader() {
               className="absolute right-0 z-20 mt-1 min-w-[10rem] rounded-md border border-[var(--kortumo-navy)]/10 bg-white py-1 shadow-md"
             >
               {me.userName ? (
-                <p className="border-b border-[var(--kortumo-navy)]/10 px-3 py-2 text-xs text-[var(--kortumo-navy)]/60">
-                  /{me.userName}
-                </p>
+                <div className="border-b border-[var(--kortumo-navy)]/10 px-3 py-2">
+                  <p className="text-xs text-[var(--kortumo-navy)]/60">
+                    /{me.userName}
+                  </p>
+                  <Link
+                    href={`/${me.userName}`}
+                    role="menuitem"
+                    className="mt-1 block text-xs font-medium text-[var(--kortumo-blue-soft)] hover:underline"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Ver canal público
+                  </Link>
+                </div>
               ) : null}
               <button
                 type="button"

@@ -57,12 +57,24 @@ npm install
 npm run dev
 ```
 
-Tests:
+## Tests
 
 ```bash
 npm test
 npm run test:coverage
 ```
+
+### Realtime toasts
+
+There is **no** client Realtime subscription yet (Web Push on Seguir exists; channel toasts are later). How to test by layer:
+
+| Layer | What | How |
+|-------|------|-----|
+| **A** | Business rules (who gets notified, noise window, claim silent) | Jest on `lib/notify/recipients` and player notify contracts — no WebSocket |
+| **B** | After wiring client hook | Pure `event → Spanish toast` mapper + helper `subscribeCallerChannel` mocked in hook tests |
+| **C** | E2E (optional) | Playwright with two sessions; only once Supabase Realtime is enabled for the tables and the toast UI exists |
+
+Do **not** put live WebSocket integration in unit Jest — flaky and slow.
 
 ## PWA (Tasks 15–16)
 
@@ -74,6 +86,7 @@ Approach (no Serwist / next-pwa) — see [Next.js PWA guide](https://nextjs.org/
 
 ## Troubleshooting
 
+- **Public `/{username}` shows zero callups while `/caller` has some** — anon could not SELECT `courts`; nested `courts!inner` dropped rows. Apply `0003_courts_anon_select.sql` (or re-run updated `0001_rls.sql` courts policies).
 - **401 on API** — session cookie missing; complete Google login via `/api/v1/auth/google`.
 - **403 caller routes** — set username once via `POST /api/v1/me/username`.
 - **Revalidate 500** — `SUPABASE_SERVICE_ROLE_KEY` missing/invalid (service client).

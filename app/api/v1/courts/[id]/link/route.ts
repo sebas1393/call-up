@@ -1,6 +1,7 @@
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonProblem, unauthorized } from "@/lib/api/http";
 import { createSupabaseServerClient } from "@/lib/db/supabase-server";
+import { ensureCallerCourtLink } from "@/lib/services/courts";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -57,12 +58,8 @@ export async function POST(_request: Request, context: RouteContext) {
     });
   }
 
-  const { error } = await supabase.from("caller_courts").upsert(
-    { caller_user_id: user.id, court_id: courtId },
-    { onConflict: "caller_user_id,court_id" },
-  );
-
-  if (error) {
+  const linked = await ensureCallerCourtLink(supabase, user.id, courtId);
+  if (!linked.ok) {
     return jsonProblem({
       status: 500,
       title: "Internal Server Error",

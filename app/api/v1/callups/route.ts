@@ -6,6 +6,7 @@ import {
   computeWaitListThreshold,
   initialCallupStatus,
 } from "@/lib/services/callups";
+import { ensureCallerCourtLink } from "@/lib/services/courts";
 import { createCallupBodySchema } from "@/lib/validators/callup";
 
 /**
@@ -114,10 +115,18 @@ export async function POST(request: Request) {
     });
   }
 
-  await supabase.from("caller_courts").upsert(
-    { caller_user_id: userId, court_id: parsed.data.courtId },
-    { onConflict: "caller_user_id,court_id" },
+  const linked = await ensureCallerCourtLink(
+    supabase,
+    userId,
+    parsed.data.courtId,
   );
+  if (!linked.ok) {
+    return jsonProblem({
+      status: 500,
+      title: "Internal Server Error",
+      detail: "Oops, algo salió mal",
+    });
+  }
 
   const waitListThreshold = computeWaitListThreshold(parsed.data.spotsQuantity);
   const rosterCount = parsed.data.subscribeMyself ? 1 : 0;

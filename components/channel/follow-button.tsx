@@ -115,7 +115,7 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
 
   if (isOwnChannel) {
     return (
-      <p className="text-sm text-zinc-600" role="status">
+      <p className="text-sm text-[var(--kortumo-navy)]/65" role="status">
         No puedes seguir tu propio canal.
       </p>
     );
@@ -136,7 +136,7 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
         {busy ? "…" : following ? "No Seguir" : "Seguir"}
       </button>
       {message ? (
-        <p className="text-sm text-zinc-600" role="status">
+        <p className="text-sm text-[var(--kortumo-navy)]/65" role="status">
           {message}
         </p>
       ) : null}

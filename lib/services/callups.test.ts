@@ -199,6 +199,7 @@ describe("public DTOs omit email/phone", () => {
       waitlistCount: 0,
     });
     expect(summary.courtName).toBe("VECIGOL");
+    expect(summary.courtAddress).toBe("");
     expect(summary.paymentKey).toBe("@llave123");
     expect(summary.subscribeEligibility).toEqual({
       canJoinRoster: true,

@@ -57,6 +57,7 @@ export type CallupSummaryDto = {
   rosterCount: number;
   waitlistCount: number;
   courtName: string;
+  courtAddress: string;
   paymentKey: string;
   subscribeEligibility: SubscribeEligibility;
 };
@@ -120,10 +121,11 @@ export function toPlayerDto(row: PlayerRow): PlayerDto {
 export function toCallupSummaryDto(input: {
   callup: CallupRow;
   courtName: string;
+  courtAddress?: string;
   rosterCount: number;
   waitlistCount: number;
 }): CallupSummaryDto {
-  const { callup, courtName, rosterCount, waitlistCount } = input;
+  const { callup, courtName, courtAddress, rosterCount, waitlistCount } = input;
   return {
     id: callup.id,
     matchAt: callup.match_at,
@@ -132,6 +134,7 @@ export function toCallupSummaryDto(input: {
     rosterCount,
     waitlistCount,
     courtName,
+    courtAddress: courtAddress ?? "",
     paymentKey: callup.payment_key,
     subscribeEligibility: getSubscribeEligibility({
       spotsQuantity: callup.spots_quantity,

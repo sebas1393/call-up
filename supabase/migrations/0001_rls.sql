@@ -228,6 +228,19 @@ CREATE POLICY courts_select_authenticated
   TO authenticated
   USING (true);
 
+-- Anon: court only when nested under a visible callup (public channel / detail), not a court directory.
+CREATE POLICY courts_select_public_via_callup
+  ON public.courts FOR SELECT
+  TO anon
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.callups cu
+      WHERE cu.court_id = courts.id
+        AND public.callup_is_visible(cu.caller)
+    )
+  );
+
 CREATE POLICY courts_insert_own
   ON public.courts FOR INSERT
   TO authenticated
@@ -247,6 +260,12 @@ CREATE POLICY caller_courts_select_own
 CREATE POLICY caller_courts_insert_own
   ON public.caller_courts FOR INSERT
   TO authenticated
+  WITH CHECK (caller_user_id = auth.uid());
+
+CREATE POLICY caller_courts_update_own
+  ON public.caller_courts FOR UPDATE
+  TO authenticated
+  USING (caller_user_id = auth.uid())
   WITH CHECK (caller_user_id = auth.uid());
 
 CREATE POLICY caller_courts_delete_own

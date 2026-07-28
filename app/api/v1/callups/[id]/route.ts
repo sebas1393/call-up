@@ -12,6 +12,7 @@ import {
   type CallupRow,
   type PlayerRow,
 } from "@/lib/services/callups";
+import { ensureCallerCourtLink } from "@/lib/services/courts";
 import { updateCallupBodySchema } from "@/lib/validators/callup";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -70,7 +71,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const { data: row, error } = await supabase
     .from("callups")
     .select(
-      `${CALLUP_SELECT}, courts!inner ( id, name, address ), players ( ${PLAYER_SELECT} )`,
+      `${CALLUP_SELECT}, courts ( id, name, address ), players ( ${PLAYER_SELECT} )`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -97,14 +98,11 @@ export async function GET(_request: Request, context: RouteContext) {
       | { id: string; name: string; address: string }
       | { id: string; name: string; address: string }[]
       | null,
-  );
-  if (!court) {
-    return jsonProblem({
-      status: 500,
-      title: "Internal Server Error",
-      detail: "Oops, algo salió mal",
-    });
-  }
+  ) ?? {
+    id: row.court_id,
+    name: "",
+    address: "",
+  };
 
   return jsonData(
     toCallupDetailDto({
@@ -242,10 +240,18 @@ export async function PUT(request: Request, context: RouteContext) {
     });
   }
 
-  await supabase.from("caller_courts").upsert(
-    { caller_user_id: user.id, court_id: parsed.data.courtId },
-    { onConflict: "caller_user_id,court_id" },
+  const linked = await ensureCallerCourtLink(
+    supabase,
+    user.id,
+    parsed.data.courtId,
   );
+  if (!linked.ok) {
+    return jsonProblem({
+      status: 500,
+      title: "Internal Server Error",
+      detail: "Oops, algo salió mal",
+    });
+  }
 
   // wait_list / wait_list_threshold stay immutable (snapshot from create).
   const nextStatus = revalidateCallupStatus({
