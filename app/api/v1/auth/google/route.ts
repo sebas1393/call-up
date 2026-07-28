@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
     }
 
     return Response.redirect(data.url, 302);
-  } catch {
+  } catch (error) {
+    console.error(error);
     return jsonProblem({
       status: 500,
       title: "Internal Server Error",
