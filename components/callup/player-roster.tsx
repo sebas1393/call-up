@@ -468,10 +468,11 @@ function PlayerTable({
           </div>
           <ul className="divide-y divide-[var(--kortumo-navy)]/10">
             {players.map((p, i) => {
-              const canPay = paymentAllowed && isOwner;
               const isSelf = Boolean(
                 sessionUserId && p.userId === sessionUserId,
               );
+              // Spec: own row if userId===me; guests → caller only.
+              const canPay = paymentAllowed && (isOwner || isSelf);
               const canPromote =
                 p.isWaitList &&
                 mutable &&

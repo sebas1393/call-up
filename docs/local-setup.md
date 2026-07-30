@@ -50,6 +50,14 @@ Put the **public** key in `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and the **private** key
 3. Paste Client ID / Secret into the Supabase Google provider form.
 4. App entry: `GET /api/v1/auth/google` (optional `redirectTo`, `intent=caller|player`).
 
+## Session persistence
+
+Auth cookies are refreshed by Next.js **`proxy.ts`** (`lib/db/update-session.ts`) on each matched request. Without this, closing the app after the access JWT expires looks like a logout.
+
+- Stay logged in until **Cerrar sesión** / `POST /api/v1/auth/logout`.
+- In Supabase Dashboard → Authentication → Settings, keep **JWT expiry** reasonable (e.g. 1h) and **refresh token** rotation enabled as you prefer; refresh tokens must remain valid for multi-day return visits.
+- Production must be HTTPS so cookies behave correctly on mobile / PWA.
+
 ## Run
 
 ```bash
