@@ -59,7 +59,7 @@ Server sends pushes via `lib/notify/fan-out.ts` + `VAPID_PRIVATE_KEY` on events 
 Auth cookies are refreshed by Next.js **`proxy.ts`** (`lib/db/update-session.ts`) on each matched request (including `/`). Client also runs `SessionKeepAlive`. Cookies use long `maxAge` + `secure` in production (`lib/db/cookie-options.ts`).
 
 - Stay logged in until **Cerrar sesión** / `POST /api/v1/auth/logout`.
-- Ready callers opening `/` or the installed PWA (`start_url` `/caller`) land on the convocatorias dashboard.
+- Ready callers opening `/` (PWA `start_url`) are redirected to `/caller`. Anon users see the home landing (never forced into Google via `/caller`).
 - After deploying cookie/proxy fixes, **sign in once more** so the browser stores cookies with the new attributes.
 - In Supabase Dashboard → Authentication → Settings, keep **JWT expiry** reasonable (e.g. 1h); refresh tokens must remain valid for multi-day return visits.
 - Production must be HTTPS.

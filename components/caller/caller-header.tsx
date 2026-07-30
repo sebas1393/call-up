@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { fetchMe, googleAuthHref, type MeProfile } from "@/components/auth/me-api";
+import { fetchMe, type MeProfile } from "@/components/auth/me-api";
 import { LogoK } from "@/components/brand/logo-k";
 
 /**
@@ -23,7 +23,8 @@ export function CallerHeader() {
       if (cancelled) return;
       if (!result.ok) {
         if (result.status === 401) {
-          window.location.href = googleAuthHref("caller", "/caller");
+          // US-001: no session → home (role CTAs), not forced Google.
+          router.replace("/");
         }
         return;
       }

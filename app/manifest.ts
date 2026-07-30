@@ -10,8 +10,9 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Kall-UP",
     description:
       "Convocatorias deportivas: crea partidos, suscríbete y recibe avisos.",
-    // Open caller dashboard; session gate redirects to login if needed (US-001/002).
-    start_url: "/caller",
+    // Home landing (US-001). Ready callers are redirected client-side to `/caller`.
+    // Do NOT start at `/caller` — that forced Google login for anon/PWA open.
+    start_url: "/",
     display: "standalone",
     background_color: "#003366",
     theme_color: "#003366",
