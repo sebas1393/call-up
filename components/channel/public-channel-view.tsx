@@ -13,6 +13,7 @@ import {
   statusLabelEs,
   statusPillClass,
 } from "@/lib/format/callup-display";
+import { useCallupPlayersRealtime } from "@/lib/realtime/use-callup-players-realtime";
 
 type PublicSummary = {
   id: string;
@@ -103,9 +104,13 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
     void load(pageIndex);
   }, [load, pageIndex]);
 
-  function requireAuth() {
-    window.location.href = googleAuthHref("player", `/${slug}`);
-  }
+  useCallupPlayersRealtime({
+    callupIds: data?.items.map((i) => i.id) ?? [],
+    enabled: Boolean(data && data.items.length > 0),
+    onChange: () => {
+      void load(pageIndex);
+    },
+  });
 
   async function copyKey(key: string, id: string) {
     try {
@@ -227,7 +232,7 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
                         </span>
                         {!open && canJoin ? (
                           <span className="font-medium text-[var(--kortumo-teal)]">
-                            Suscribirme
+                            Inscribir
                           </span>
                         ) : null}
                       </span>
@@ -261,7 +266,6 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
                         callupId={item.id}
                         sessionUserId={me?.id ?? null}
                         isOwner={isOwnChannel}
-                        onAuthRequired={requireAuth}
                         onChanged={() => void load(pageIndex)}
                       />
                     </div>

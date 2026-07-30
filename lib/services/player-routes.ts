@@ -1,6 +1,4 @@
-/**
- * Shared loaders for player mutation routes under /callups/[id]/players/*.
- */
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonProblem, unauthorized } from "@/lib/api/http";
@@ -56,7 +54,7 @@ export async function requireSession(): Promise<
 }
 
 export async function loadCallupWithPlayers(
-  supabase: AuthedSupabase,
+  supabase: SupabaseClient,
   callupId: string,
 ): Promise<{ callup: CallupRow; players: PlayerRow[] } | Response> {
   const { data: row, error } = await supabase
@@ -125,7 +123,7 @@ export async function requireCallupPlayersContext(
  * Recomputes Open/Full/Closed after roster/waitlist mutations (never clears cancelled).
  */
 export async function syncCallupStatus(
-  supabase: AuthedSupabase,
+  supabase: SupabaseClient,
   callup: CallupRow,
   rosterCount: number,
   waitlistCount: number,

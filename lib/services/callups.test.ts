@@ -189,6 +189,7 @@ describe("public DTOs omit email/phone", () => {
     expect(detail.players[0]).not.toHaveProperty("email");
     expect(detail.waitListThreshold).toBe(6);
     expect(detail.rosterCount).toBe(1);
+    expect(detail.callerId).toBe("owner");
   });
 
   it("toCallupSummaryDto includes eligibility and paymentKey", () => {

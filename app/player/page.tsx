@@ -5,10 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { LogoK } from "@/components/brand/logo-k";
-import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH, USERNAME_PATTERN } from "@/lib/constants/callup";
+import {
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  USERNAME_PATTERN,
+} from "@/lib/constants/callup";
 
 /**
- * US-008 entry: ask for caller username slug, then Google auth → /{username}.
+ * US-008 entry: ask for caller username slug, then open `/{username}` (no Google gate).
  */
 export default function PlayerEntryPage() {
   const router = useRouter();
@@ -33,10 +37,7 @@ export default function PlayerEntryPage() {
       return;
     }
     setError(null);
-    const redirectTo = `/${slug}`;
-    router.push(
-      `/api/v1/auth/google?intent=player&redirectTo=${encodeURIComponent(redirectTo)}`,
-    );
+    router.push(`/${slug}`);
   }
 
   return (
@@ -54,7 +55,8 @@ export default function PlayerEntryPage() {
         </h1>
         <p className="text-sm text-white/80">
           Ej. <span className="text-[var(--kortumo-blue-soft)]">juanbueno</span>{" "}
-          — solo el usuario, sin espacios ni enlace completo.
+          — solo el usuario, sin espacios ni enlace completo. Podés inscribirte
+          como invitado sin iniciar sesión.
         </p>
         <label className="sr-only" htmlFor="caller-username">
           Usuario del caller
@@ -77,7 +79,7 @@ export default function PlayerEntryPage() {
           type="submit"
           className="h-12 rounded-md bg-[var(--kortumo-red)] text-sm font-semibold text-white transition-[filter] hover:brightness-110"
         >
-          Continuar con Google
+          Ver convocatorias
         </button>
         <Link
           href="/"

@@ -64,6 +64,8 @@ export type CallupSummaryDto = {
 
 export type CallupDetailDto = {
   id: string;
+  /** Owner user id — used for admin gate (US-005); not PII. */
+  callerId: string;
   status: CallupStatus;
   matchAt: string;
   courtType: CourtType;
@@ -159,6 +161,7 @@ export function toCallupDetailDto(input: {
   const { rosterCount, waitlistCount } = countPlayers(players);
   return {
     id: callup.id,
+    callerId: callup.caller,
     status: callup.status,
     matchAt: callup.match_at,
     courtType: callup.court_type,

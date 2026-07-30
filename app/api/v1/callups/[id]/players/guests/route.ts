@@ -1,5 +1,7 @@
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonData, jsonProblem } from "@/lib/api/http";
+import { createSupabaseServerClient } from "@/lib/db/supabase-server";
+import { createSupabaseServiceClient } from "@/lib/db/supabase-service";
 import { countPlayers } from "@/lib/services/callups";
 import {
   assertChurnMutationAllowed,
@@ -10,8 +12,8 @@ import {
 } from "@/lib/services/players";
 import {
   eligibilityFromContext,
+  loadCallupWithPlayers,
   PLAYER_SELECT,
-  requireCallupPlayersContext,
   syncCallupStatus,
 } from "@/lib/services/player-routes";
 import { createGuestBodySchema } from "@/lib/validators/players";
@@ -19,14 +21,23 @@ import { createGuestBodySchema } from "@/lib/validators/players";
 type RouteContext = { params: Promise<{ id: string }> };
 
 /**
- * POST /api/v1/callups/{id}/players/guests — Crear Jugador.
+ * POST /api/v1/callups/{id}/players/guests — Inscribir (guest).
+ * Anon allowed (US-008/009 MVP); writes via service role when no session.
  */
 export async function POST(request: Request, context: RouteContext) {
   const { id: callupId } = await context.params;
-  const ctx = await requireCallupPlayersContext(callupId);
-  if (ctx instanceof Response) return ctx;
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const churn = assertChurnMutationAllowed(ctx.callup.status);
+  const loaded = await loadCallupWithPlayers(supabase, callupId);
+  if (loaded instanceof Response) return loaded;
+
+  const { rosterCount, waitlistCount } = countPlayers(loaded.players);
+  const writeClient = user ? supabase : createSupabaseServiceClient();
+
+  const churn = assertChurnMutationAllowed(loaded.callup.status);
   if (!churn.ok) {
     return jsonProblem({
       status: churn.status,
@@ -58,17 +69,22 @@ export async function POST(request: Request, context: RouteContext) {
     });
   }
 
-  const existingGuestNames = ctx.players
+  const existingGuestNames = loaded.players
     .filter((p) => p.user_id == null)
     .map((p) => p.name);
 
+  const actorIsOwner = Boolean(user && user.id === loaded.callup.caller);
   const decision = decideGuestCreate({
     guestName: parsed.data.guestName,
     acceptWaitlist: parsed.data.acceptWaitlist,
     requestedHasPayment: parsed.data.hasPayment,
-    actorIsOwner: ctx.userId === ctx.callup.caller,
+    actorIsOwner,
     existingGuestNames,
-    eligibility: eligibilityFromContext(ctx),
+    eligibility: eligibilityFromContext({
+      callup: loaded.callup,
+      rosterCount,
+      waitlistCount,
+    }),
   });
 
   if (!decision.ok) {
@@ -80,7 +96,7 @@ export async function POST(request: Request, context: RouteContext) {
     });
   }
 
-  const { data: created, error } = await ctx.supabase
+  const { data: created, error } = await writeClient
     .from("players")
     .insert({
       callup_id: callupId,
@@ -109,7 +125,7 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   if (!decision.isWaitList) {
-    const { data: rosterRows } = await ctx.supabase
+    const { data: rosterRows } = await writeClient
       .from("players")
       .select("id")
       .eq("callup_id", callupId)
@@ -117,10 +133,10 @@ export async function POST(request: Request, context: RouteContext) {
 
     const race = decideAfterRosterInsert(
       rosterRows?.length ?? 0,
-      ctx.callup.spots_quantity,
+      loaded.callup.spots_quantity,
     );
     if (!race.ok) {
-      await ctx.supabase.from("players").delete().eq("id", created.id);
+      await writeClient.from("players").delete().eq("id", created.id);
       return jsonProblem({
         status: race.status,
         title: "Conflict",
@@ -132,14 +148,14 @@ export async function POST(request: Request, context: RouteContext) {
 
   emitSubscribeIfNeeded(undefined, decision.notifyChannel);
 
-  const { data: allPlayers } = await ctx.supabase
+  const { data: allPlayers } = await writeClient
     .from("players")
     .select("is_wait_list")
     .eq("callup_id", callupId);
   const counts = countPlayers(allPlayers ?? []);
   await syncCallupStatus(
-    ctx.supabase,
-    ctx.callup,
+    writeClient,
+    loaded.callup,
     counts.rosterCount,
     counts.waitlistCount,
   );

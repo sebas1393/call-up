@@ -64,15 +64,23 @@ npm test
 npm run test:coverage
 ```
 
-### Realtime toasts
+### Realtime live UI (MUST)
 
-There is **no** client Realtime subscription yet (Web Push on Seguir exists; channel toasts are later). How to test by layer:
+Open callup screens **must** update player lists/counts via Supabase **`postgres_changes`** without manual refresh (spec §11.7). This is **not** optional toast polish.
+
+1. Apply `supabase/migrations/0004_realtime_publication.sql` (adds `players` + `callups` to `supabase_realtime`), **or** Dashboard → Database → Publications → enable those tables.
+2. Client: `createBrowserClient` + `useCallupPlayersRealtime` on `/{username}` and expanded roster (`PlayerRoster`).
+3. Verify: two browsers/devices on the same callup → **Inscribir** on A appears on B without reload.
+
+### Realtime toasts (push copy when app open)
+
+Toasts on top of live refresh (Spanish event copy). Test layers:
 
 | Layer | What | How |
 |-------|------|-----|
-| **A** | Business rules (who gets notified, noise window, claim silent) | Jest on `lib/notify/recipients` and player notify contracts — no WebSocket |
-| **B** | After wiring client hook | Pure `event → Spanish toast` mapper + helper `subscribeCallerChannel` mocked in hook tests |
-| **C** | E2E (optional) | Playwright with two sessions; only once Supabase Realtime is enabled for the tables and the toast UI exists |
+| **A** | Business rules (who gets notified, noise window, claim silent) | Jest on `lib/notify/recipients` — no WebSocket |
+| **B** | Client helpers | Jest on `lib/realtime/callup-players-events`; mock channel in hook tests |
+| **C** | E2E (optional) | Playwright two sessions; publication must be on |
 
 Do **not** put live WebSocket integration in unit Jest — flaky and slow.
 
@@ -87,6 +95,8 @@ Approach (no Serwist / next-pwa) — see [Next.js PWA guide](https://nextjs.org/
 ## Troubleshooting
 
 - **Public `/{username}` shows zero callups while `/caller` has some** — anon could not SELECT `courts`; nested `courts!inner` dropped rows. Apply `0003_courts_anon_select.sql` (or re-run updated `0001_rls.sql` courts policies).
+- **Two devices: Inscribir only visible after refresh** — Realtime not published and/or no client `postgres_changes` subscription. Apply `0004_realtime_publication.sql` and confirm `useCallupPlayersRealtime` is mounted (spec §11.7).
+- **`cannot add postgres_changes callbacks … after subscribe()`** — two hooks reused the same Realtime channel topic on the singleton browser client (e.g. list + roster with one callup id). Fixed by unique topic per hook instance (`useId`); hard-refresh if an old bundle is cached.
 - **401 on API** — session cookie missing; complete Google login via `/api/v1/auth/google`.
 - **403 caller routes** — set username once via `POST /api/v1/me/username`.
 - **Revalidate 500** — `SUPABASE_SERVICE_ROLE_KEY` missing/invalid (service client).
