@@ -53,7 +53,7 @@ const ROW_GRID =
   "grid grid-cols-[1.25rem_minmax(0,1fr)_2rem] items-center gap-x-2 px-3 py-2";
 
 /**
- * Public roster: anon Inscribir (guest), logged-in Inscribirme + Promoverme (US-009).
+ * Public roster: Inscribir (guest) for anon + logged-in; Inscribirme + Promoverme (US-009).
  */
 export function PlayerRoster({
   callupId,
@@ -247,8 +247,9 @@ export function PlayerRoster({
       detail.players.some((p) => p.userId === sessionUserId),
   );
 
-  const showGuestInscribir = !sessionUserId && eligibilityOk;
-  const showInscribirme = Boolean(sessionUserId) && !alreadyEnrolled && eligibilityOk;
+  const showGuestInscribir = eligibilityOk;
+  const showInscribirme =
+    Boolean(sessionUserId) && !alreadyEnrolled && eligibilityOk;
 
   const roster = detail.players.filter((p) => !p.isWaitList);
   const waitlist = detail.players.filter((p) => p.isWaitList);
@@ -279,28 +280,34 @@ export function PlayerRoster({
             ) : null}
           </div>
         </div>
-        {showGuestInscribir ? (
-          <button
-            type="button"
-            onClick={() => {
-              setGuestName("");
-              setGuestOpen(true);
-            }}
-            className="h-8 shrink-0 rounded-md bg-[var(--kortumo-red)] px-2.5 text-xs font-semibold text-white"
-          >
-            + Inscribir
-          </button>
-        ) : null}
-        {showInscribirme ? (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={onInscribirme}
-            className="h-8 shrink-0 rounded-md bg-[var(--kortumo-red)] px-2.5 text-xs font-semibold text-white disabled:opacity-60"
-          >
-            Inscribirme
-          </button>
-        ) : null}
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+          {showInscribirme ? (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={onInscribirme}
+              className="h-8 rounded-md bg-[var(--kortumo-red)] px-2.5 text-xs font-semibold text-white disabled:opacity-60"
+            >
+              Inscribirme
+            </button>
+          ) : null}
+          {showGuestInscribir ? (
+            <button
+              type="button"
+              onClick={() => {
+                setGuestName("");
+                setGuestOpen(true);
+              }}
+              className={
+                showInscribirme
+                  ? "h-8 rounded-md border border-[var(--kortumo-red)] bg-white px-2.5 text-xs font-semibold text-[var(--kortumo-red)]"
+                  : "h-8 rounded-md bg-[var(--kortumo-red)] px-2.5 text-xs font-semibold text-white"
+              }
+            >
+              + Inscribir
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <PlayerTable
