@@ -50,6 +50,10 @@ Put the **public** key in `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and the **private** key
 3. Paste Client ID / Secret into the Supabase Google provider form.
 4. App entry: `GET /api/v1/auth/google` (optional `redirectTo`, `intent=caller|player`).
 
+## Web Push fan-out
+
+Server sends pushes via `lib/notify/fan-out.ts` + `VAPID_PRIVATE_KEY` on events (`new_callup`, `subscribe`, `unsubscribe`, `promote`, `plaza_libre`, `payment`). Client registers the subscription on **Seguir** (and re-registers if already following with permission granted). Requires HTTPS (or localhost), installed/capable SW, and VAPID keys in env (local + Vercel).
+
 ## Session persistence
 
 Auth cookies are refreshed by Next.js **`proxy.ts`** (`lib/db/update-session.ts`) on each matched request. Without this, closing the app after the access JWT expires looks like a logout.

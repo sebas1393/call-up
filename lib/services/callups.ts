@@ -118,6 +118,20 @@ export function toPlayerDto(row: PlayerRow): PlayerDto {
 }
 
 /**
+ * Stable roster/waitlist order: enrollment time (`created_at` ASC), then id.
+ * Payment / name edits MUST NOT change positions (spec US-005/009).
+ */
+export function sortPlayersByEnrollment<T extends { created_at: string; id: string }>(
+  players: ReadonlyArray<T>,
+): T[] {
+  return players.slice().sort((a, b) => {
+    const byTime = a.created_at.localeCompare(b.created_at);
+    if (byTime !== 0) return byTime;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+/**
  * List/summary DTO (mine / channel). No email/phone.
  */
 export function toCallupSummaryDto(input: {
@@ -158,7 +172,8 @@ export function toCallupDetailDto(input: {
   players: PlayerRow[];
 }): CallupDetailDto {
   const { callup, court, players } = input;
-  const { rosterCount, waitlistCount } = countPlayers(players);
+  const ordered = sortPlayersByEnrollment(players);
+  const { rosterCount, waitlistCount } = countPlayers(ordered);
   return {
     id: callup.id,
     callerId: callup.caller,
@@ -184,7 +199,7 @@ export function toCallupDetailDto(input: {
       waitlistCount,
       status: callup.status,
     }),
-    players: players.map(toPlayerDto),
+    players: ordered.map(toPlayerDto),
   };
 }
 

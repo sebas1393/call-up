@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import {
+  captureBeforeInstallPrompt,
+  clearDeferredInstallPrompt,
   dismissInstallPrompt,
+  getDeferredInstallPrompt,
+  isAndroidLike,
   isInstallPromptDismissed,
   isIosLike,
   isStandaloneDisplay,
@@ -25,7 +29,7 @@ function shouldShowInstallCta(): boolean {
 
 /**
  * Install / Add to Home Screen CTA (spec §11.8).
- * Chromium: deferred beforeinstallprompt. iOS: Share instructions sheet.
+ * Chromium: deferred beforeinstallprompt. Platform-specific manual instructions otherwise.
  */
 export function InstallAppPrompt({
   variant = "onLight",
@@ -39,18 +43,17 @@ export function InstallAppPrompt({
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    // Client-only: avoid SSR/hydration mismatch for installability.
+    captureBeforeInstallPrompt();
     if (!shouldShowInstallCta()) return;
     setVisible(true);
+    setDeferred(getDeferredInstallPrompt());
 
-    function onBeforeInstall(e: Event) {
-      e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEvent);
+    function onBip() {
+      setDeferred(getDeferredInstallPrompt());
     }
-
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("kortumo-bip", onBip);
     return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("kortumo-bip", onBip);
     };
   }, []);
 
@@ -61,11 +64,13 @@ export function InstallAppPrompt({
   }, []);
 
   async function onInstallClick() {
-    if (deferred) {
+    const promptEvent = deferred ?? getDeferredInstallPrompt();
+    if (promptEvent) {
       setPending(true);
       try {
-        await deferred.prompt();
-        await deferred.userChoice;
+        await promptEvent.prompt();
+        await promptEvent.userChoice;
+        clearDeferredInstallPrompt();
         setDeferred(null);
         hide();
       } catch {
@@ -81,7 +86,8 @@ export function InstallAppPrompt({
 
   if (!visible) return null;
 
-  const showIosHint = !deferred && isIosLike();
+  const ios = isIosLike();
+  const android = isAndroidLike();
 
   const btnClass =
     variant === "onDark"
@@ -116,27 +122,62 @@ export function InstallAppPrompt({
         title="Agregar Kortumo a inicio"
         onClose={() => setSheetOpen(false)}
       >
-        <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[var(--kortumo-navy)]/85">
-          <li>
-            Toca <strong>Compartir</strong> (□↑) en la barra de Safari.
-          </li>
-          <li>
-            Elige <strong>Agregar a pantalla de inicio</strong>.
-          </li>
-          <li>
-            Confirma <strong>Agregar</strong>.
-          </li>
-        </ol>
-        {showIosHint ? (
-          <p className="mt-3 text-xs leading-relaxed text-[var(--kortumo-navy)]/60">
-            En iPhone, los avisos en segundo plano requieren este paso después
-            de seguir un canal.
-          </p>
+        {ios ? (
+          <>
+            <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[var(--kortumo-navy)]/85">
+              <li>
+                Toca <strong>Compartir</strong> (□↑) en la barra de Safari.
+              </li>
+              <li>
+                Elige <strong>Agregar a pantalla de inicio</strong>.
+              </li>
+              <li>
+                Confirma <strong>Agregar</strong>.
+              </li>
+            </ol>
+            <p className="mt-3 text-xs leading-relaxed text-[var(--kortumo-navy)]/60">
+              En iPhone, los avisos en segundo plano requieren este paso después
+              de seguir un canal.
+            </p>
+          </>
+        ) : android ? (
+          <>
+            <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[var(--kortumo-navy)]/85">
+              <li>
+                Abre el menú <strong>⋮</strong> de Chrome (arriba a la derecha).
+              </li>
+              <li>
+                Elige <strong>Instalar app</strong> o{" "}
+                <strong>Agregar a la pantalla de inicio</strong>.
+              </li>
+              <li>
+                Confirma la instalación.
+              </li>
+            </ol>
+            <p className="mt-3 text-xs leading-relaxed text-[var(--kortumo-navy)]/60">
+              Si no ves la opción, abre Kortumo en Chrome (no en el navegador
+              interno de otra app) y vuelve a intentar.
+            </p>
+          </>
         ) : (
-          <p className="mt-3 text-xs leading-relaxed text-[var(--kortumo-navy)]/60">
-            Si tu navegador no ofrece instalación directa, usa el menú del
-            navegador para agregar esta página a la pantalla de inicio.
-          </p>
+          <>
+            <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[var(--kortumo-navy)]/85">
+              <li>
+                Abre el menú del navegador (⋮ o ≡).
+              </li>
+              <li>
+                Elige <strong>Instalar</strong> /{" "}
+                <strong>Agregar a la pantalla de inicio</strong>.
+              </li>
+              <li>
+                Confirma.
+              </li>
+            </ol>
+            <p className="mt-3 text-xs leading-relaxed text-[var(--kortumo-navy)]/60">
+              En Chrome de escritorio también puedes usar el icono de instalar
+              en la barra de direcciones.
+            </p>
+          </>
         )}
         <button
           type="button"

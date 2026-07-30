@@ -1,5 +1,7 @@
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonProblem } from "@/lib/api/http";
+import { formatMatchAtEs } from "@/lib/format/callup-display";
+import { fanOutChannelNotify, loadCallerUserName } from "@/lib/notify/fan-out";
 import { countPlayers } from "@/lib/services/callups";
 import { assertChurnMutationAllowed } from "@/lib/services/players";
 import {
@@ -50,15 +52,37 @@ export async function POST(_request: Request, context: RouteContext) {
 
   const remaining = ctx.players.filter((p) => p.id !== mine.id);
   const counts = countPlayers(remaining);
-  await syncCallupStatus(
+  const statusAfter = await syncCallupStatus(
     ctx.supabase,
     ctx.callup,
     counts.rosterCount,
     counts.waitlistCount,
   );
 
-  // plaza_libre / unsubscribe notify stubbed until Task 12.
-  void wasRoster;
+  const callerUserName = await loadCallerUserName(ctx.callup.caller);
+  if (callerUserName) {
+    const when = formatMatchAtEs(ctx.callup.match_at);
+    await fanOutChannelNotify({
+      event: "unsubscribe",
+      callupOwnerId: ctx.callup.caller,
+      callerUserName,
+      callupId,
+      statusAfter,
+      title: "Baja de convocatoria",
+      body: `${mine.name} se bajó · ${when}`,
+    });
+    if (wasRoster && statusAfter === "Open") {
+      await fanOutChannelNotify({
+        event: "plaza_libre",
+        callupOwnerId: ctx.callup.caller,
+        callerUserName,
+        callupId,
+        statusAfter,
+        title: "Plaza libre",
+        body: `Hay cupo en ${when}`,
+      });
+    }
+  }
 
   return new Response(null, { status: 204 });
 }

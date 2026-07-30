@@ -9,22 +9,24 @@
 /* eslint-disable no-undef -- service worker global scope */
 
 self.addEventListener("push", function (event) {
-  if (!event.data) {
-    return;
+  let data = {
+    title: "Kortumo",
+    body: "Tienes un aviso nuevo",
+    url: "/",
+    event: null,
+    callupId: null,
+    callerUserName: null,
+  };
+
+  if (event.data) {
+    try {
+      data = Object.assign(data, event.data.json());
+    } catch {
+      data.body = event.data.text() || data.body;
+    }
   }
 
-  let data;
-  try {
-    data = event.data.json();
-  } catch {
-    data = {
-      title: "Call Up",
-      body: event.data.text(),
-      url: "/",
-    };
-  }
-
-  const title = data.title || "Call Up";
+  const title = data.title || "Kortumo";
   const options = {
     body: data.body || "",
     icon: data.icon || "/icons/icon-192.png",

@@ -2,12 +2,13 @@ import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonData, jsonProblem } from "@/lib/api/http";
 import { createSupabaseServerClient } from "@/lib/db/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/db/supabase-service";
+import { formatMatchAtEs } from "@/lib/format/callup-display";
+import { fanOutChannelNotify, loadCallerUserName } from "@/lib/notify/fan-out";
 import { countPlayers } from "@/lib/services/callups";
 import {
   assertChurnMutationAllowed,
   decideAfterRosterInsert,
   decideGuestCreate,
-  emitSubscribeIfNeeded,
   mapPlayerRowToDto,
 } from "@/lib/services/players";
 import {
@@ -146,19 +147,34 @@ export async function POST(request: Request, context: RouteContext) {
     }
   }
 
-  emitSubscribeIfNeeded(undefined, decision.notifyChannel);
-
   const { data: allPlayers } = await writeClient
     .from("players")
     .select("is_wait_list")
     .eq("callup_id", callupId);
   const counts = countPlayers(allPlayers ?? []);
-  await syncCallupStatus(
+  const statusAfter = await syncCallupStatus(
     writeClient,
     loaded.callup,
     counts.rosterCount,
     counts.waitlistCount,
   );
+
+  if (decision.notifyChannel) {
+    const callerUserName = await loadCallerUserName(loaded.callup.caller);
+    if (callerUserName) {
+      const when = formatMatchAtEs(loaded.callup.match_at);
+      await fanOutChannelNotify({
+        event: "subscribe",
+        callupOwnerId: loaded.callup.caller,
+        callerUserName,
+        callupId,
+        statusAfter,
+        filledCapacity: statusAfter === "Full",
+        title: "Nuevo inscrito",
+        body: `${created.name} se apuntó · ${when}`,
+      });
+    }
+  }
 
   return jsonData(mapPlayerRowToDto(created), { status: 201 });
 }

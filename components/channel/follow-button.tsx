@@ -52,6 +52,15 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
     void refresh();
   }, [isOwnChannel, refresh]);
 
+  // Spec §11.1: if already following, re-register push when permission already granted
+  // (e.g. user installed PWA after Seguir).
+  useEffect(() => {
+    if (isOwnChannel || state !== "following") return;
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission !== "granted") return;
+    void subscribePushAndRegister();
+  }, [isOwnChannel, state]);
+
   const onFollow = () => {
     if (isOwnChannel) return;
     setMessage(null);

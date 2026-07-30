@@ -1,5 +1,7 @@
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonData, jsonProblem } from "@/lib/api/http";
+import { formatMatchAtEs } from "@/lib/format/callup-display";
+import { fanOutChannelNotify, loadCallerUserName } from "@/lib/notify/fan-out";
 import { assertCallupOwner, countPlayers } from "@/lib/services/callups";
 import {
   assertChurnMutationAllowed,
@@ -161,14 +163,40 @@ export async function DELETE(_request: Request, context: RouteContext) {
     });
   }
 
+  const wasRoster = !target.is_wait_list;
   const remaining = ctx.players.filter((p) => p.id !== playerId);
   const counts = countPlayers(remaining);
-  await syncCallupStatus(
+  const statusAfter = await syncCallupStatus(
     ctx.supabase,
     ctx.callup,
     counts.rosterCount,
     counts.waitlistCount,
   );
+
+  const callerUserName = await loadCallerUserName(ctx.callup.caller);
+  if (callerUserName) {
+    const when = formatMatchAtEs(ctx.callup.match_at);
+    await fanOutChannelNotify({
+      event: "unsubscribe",
+      callupOwnerId: ctx.callup.caller,
+      callerUserName,
+      callupId,
+      statusAfter,
+      title: "Baja de convocatoria",
+      body: `${target.name} fue retirado · ${when}`,
+    });
+    if (wasRoster && statusAfter === "Open") {
+      await fanOutChannelNotify({
+        event: "plaza_libre",
+        callupOwnerId: ctx.callup.caller,
+        callerUserName,
+        callupId,
+        statusAfter,
+        title: "Plaza libre",
+        body: `Hay cupo en ${when}`,
+      });
+    }
+  }
 
   return new Response(null, { status: 204 });
 }

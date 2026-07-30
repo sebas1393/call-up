@@ -19,9 +19,12 @@ function ensureVapid(): boolean {
   return true;
 }
 
+export type SendWebPushResult =
+  | { ok: true }
+  | { ok: false; gone: boolean; statusCode?: number };
+
 /**
  * Sends one Web Push payload (spec §11.5 JSON). Server-only; uses VAPID private key.
- * Returns false when VAPID is not configured or send fails.
  */
 export async function sendWebPushNotification(
   subscription: PushKeys,
@@ -33,10 +36,10 @@ export async function sendWebPushNotification(
     callupId?: string | null;
     callerUserName?: string | null;
   },
-): Promise<boolean> {
+): Promise<SendWebPushResult> {
   if (!ensureVapid()) {
     console.warn("Web Push skipped: VAPID keys not configured");
-    return false;
+    return { ok: false, gone: false };
   }
 
   try {
@@ -57,9 +60,17 @@ export async function sendWebPushNotification(
         callerUserName: payload.callerUserName ?? null,
       }),
     );
-    return true;
+    return { ok: true };
   } catch (err) {
-    console.error("Web Push send failed", err);
-    return false;
+    const statusCode =
+      typeof err === "object" &&
+      err !== null &&
+      "statusCode" in err &&
+      typeof (err as { statusCode: unknown }).statusCode === "number"
+        ? (err as { statusCode: number }).statusCode
+        : undefined;
+    const gone = statusCode === 404 || statusCode === 410;
+    console.error("Web Push send failed", statusCode ?? err);
+    return { ok: false, gone, statusCode };
   }
 }

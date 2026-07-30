@@ -27,6 +27,7 @@ export {
   computeWaitListThreshold,
   countPlayers,
   initialCallupStatus,
+  sortPlayersByEnrollment,
   toCallupDetailDto,
   toCallupSummaryDto,
   toPlayerDto,

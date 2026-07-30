@@ -79,6 +79,8 @@ export async function subscribePushAndRegister(): Promise<SubscribePushResult> {
     const serialized = subscription.toJSON();
     const res = await fetch("/api/v1/me/push-subscription", {
       method: "POST",
+      credentials: "include",
+      cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         endpoint: serialized.endpoint,

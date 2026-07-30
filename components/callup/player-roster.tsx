@@ -251,8 +251,16 @@ export function PlayerRoster({
   const showInscribirme =
     Boolean(sessionUserId) && !alreadyEnrolled && eligibilityOk;
 
-  const roster = detail.players.filter((p) => !p.isWaitList);
-  const waitlist = detail.players.filter((p) => p.isWaitList);
+  const byEnrollment = (a: PlayerDto, b: PlayerDto) =>
+    a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id);
+  const roster = detail.players
+    .filter((p) => !p.isWaitList)
+    .slice()
+    .sort(byEnrollment);
+  const waitlist = detail.players
+    .filter((p) => p.isWaitList)
+    .slice()
+    .sort(byEnrollment);
 
   return (
     <div className="box-border w-full max-w-full min-w-0 space-y-3 overflow-x-hidden">

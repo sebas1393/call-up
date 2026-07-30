@@ -1,5 +1,7 @@
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonData, jsonProblem } from "@/lib/api/http";
+import { formatMatchAtEs } from "@/lib/format/callup-display";
+import { fanOutChannelNotify, loadCallerUserName } from "@/lib/notify/fan-out";
 import { countPlayers } from "@/lib/services/callups";
 import {
   assertChurnMutationAllowed,
@@ -124,18 +126,31 @@ export async function POST(_request: Request, context: RouteContext) {
     });
   }
 
-  // promote channel notify stubbed until Task 12.
   const { data: allPlayers } = await ctx.supabase
     .from("players")
     .select("is_wait_list")
     .eq("callup_id", callupId);
   const counts = countPlayers(allPlayers ?? []);
-  await syncCallupStatus(
+  const statusAfter = await syncCallupStatus(
     ctx.supabase,
     ctx.callup,
     counts.rosterCount,
     counts.waitlistCount,
   );
+
+  const callerUserName = await loadCallerUserName(ctx.callup.caller);
+  if (callerUserName) {
+    const when = formatMatchAtEs(ctx.callup.match_at);
+    await fanOutChannelNotify({
+      event: "promote",
+      callupOwnerId: ctx.callup.caller,
+      callerUserName,
+      callupId,
+      statusAfter,
+      title: "Promovido a nómina",
+      body: `${updated.name} pasó a la nómina · ${when}`,
+    });
+  }
 
   return jsonData(mapPlayerRowToDto(updated));
 }

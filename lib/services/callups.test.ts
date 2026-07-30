@@ -8,6 +8,7 @@ import {
   computeWaitListThreshold,
   countPlayers,
   initialCallupStatus,
+  sortPlayersByEnrollment,
   toCallupDetailDto,
   toCallupSummaryDto,
   toPlayerDto,
@@ -152,6 +153,35 @@ describe("assertCallupOwner", () => {
     if (!denied.ok) {
       expect(denied.code).toBe(ErrorCode.FORBIDDEN);
     }
+  });
+});
+
+describe("sortPlayersByEnrollment", () => {
+  it("orders by created_at ASC and ignores payment", () => {
+    const mixed: PlayerRow[] = [
+      {
+        id: "p2",
+        callup_id: "cu1",
+        name: "B",
+        has_payment: true,
+        is_wait_list: false,
+        user_id: null,
+        created_at: "2026-07-28T12:00:00-05:00",
+      },
+      {
+        id: "p1",
+        callup_id: "cu1",
+        name: "A",
+        has_payment: false,
+        is_wait_list: false,
+        user_id: null,
+        created_at: "2026-07-28T11:00:00-05:00",
+      },
+    ];
+    expect(sortPlayersByEnrollment(mixed).map((p) => p.id)).toEqual([
+      "p1",
+      "p2",
+    ]);
   });
 });
 

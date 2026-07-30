@@ -1,9 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { CallupStatus } from "@/lib/constants/callup";
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonProblem, unauthorized } from "@/lib/api/http";
 import { createSupabaseServerClient } from "@/lib/db/supabase-server";
-import { countPlayers, type CallupRow, type PlayerRow } from "@/lib/services/callups";
+import {
+  countPlayers,
+  sortPlayersByEnrollment,
+  type CallupRow,
+  type PlayerRow,
+} from "@/lib/services/callups";
 import { revalidateCallupStatus } from "@/lib/rules/callup-status";
 
 export const CALLUP_SELECT =
@@ -61,6 +67,7 @@ export async function loadCallupWithPlayers(
     .from("callups")
     .select(`${CALLUP_SELECT}, players ( ${PLAYER_SELECT} )`)
     .eq("id", callupId)
+    .order("created_at", { referencedTable: "players", ascending: true })
     .maybeSingle();
 
   if (error) {
@@ -96,7 +103,7 @@ export async function loadCallupWithPlayers(
 
   return {
     callup,
-    players: (row.players ?? []) as PlayerRow[],
+    players: sortPlayersByEnrollment((row.players ?? []) as PlayerRow[]),
   };
 }
 
@@ -121,13 +128,14 @@ export async function requireCallupPlayersContext(
 
 /**
  * Recomputes Open/Full/Closed after roster/waitlist mutations (never clears cancelled).
+ * @returns Status after sync (for notify noise window).
  */
 export async function syncCallupStatus(
   supabase: SupabaseClient,
   callup: CallupRow,
   rosterCount: number,
   waitlistCount: number,
-): Promise<void> {
+): Promise<CallupStatus> {
   const next = revalidateCallupStatus({
     currentStatus: callup.status,
     matchAt: callup.match_at,
@@ -145,6 +153,7 @@ export async function syncCallupStatus(
       .update({ status: next.status })
       .eq("id", callup.id);
   }
+  return next.status;
 }
 
 export function eligibilityFromContext(ctx: {

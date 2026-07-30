@@ -1,6 +1,8 @@
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonData, jsonProblem, unauthorized } from "@/lib/api/http";
 import { createSupabaseServerClient } from "@/lib/db/supabase-server";
+import { formatMatchAtEs } from "@/lib/format/callup-display";
+import { fanOutChannelNotify } from "@/lib/notify/fan-out";
 import {
   assertMatchAtNotPast,
   computeWaitListThreshold,
@@ -16,6 +18,7 @@ async function requireCaller(): Promise<
   | {
       userId: string;
       displayName: string;
+      userName: string;
       supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
     }
   | Response
@@ -48,6 +51,7 @@ async function requireCaller(): Promise<
   return {
     userId: user.id,
     displayName: me.name ?? "Caller",
+    userName: me.user_name,
     supabase,
   };
 }
@@ -58,7 +62,7 @@ async function requireCaller(): Promise<
 export async function POST(request: Request) {
   const caller = await requireCaller();
   if (caller instanceof Response) return caller;
-  const { userId, displayName, supabase } = caller;
+  const { userId, displayName, userName, supabase } = caller;
 
   let body: unknown;
   try {
@@ -180,6 +184,17 @@ export async function POST(request: Request) {
     }
   }
 
-  // Channel notify `new_callup` wired in Task 12.
+  const when = formatMatchAtEs(parsed.data.matchAt);
+  await fanOutChannelNotify({
+    event: "new_callup",
+    callupOwnerId: userId,
+    callerUserName: userName,
+    callupId: callup.id,
+    statusAfter: status,
+    filledCapacity: status === "Full",
+    title: "Nueva convocatoria",
+    body: `${userName} abrió un partido el ${when}`,
+  });
+
   return jsonData({ id: callup.id }, { status: 201 });
 }

@@ -1,5 +1,5 @@
 /**
- * Notification recipient resolution (§11).
+ * Notification recipient resolution + Web Push fan-out (§11).
  */
 export {
   assertNotSelfFollow,
@@ -9,3 +9,8 @@ export {
   type ChannelNotifyEvent,
   type ResolveRecipientsInput,
 } from "@/lib/notify/recipients";
+export {
+  fanOutChannelNotify,
+  loadCallerUserName,
+  type FanOutInput,
+} from "@/lib/notify/fan-out";

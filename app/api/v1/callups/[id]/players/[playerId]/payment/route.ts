@@ -1,5 +1,6 @@
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonData, jsonProblem } from "@/lib/api/http";
+import { fanOutChannelNotify, loadCallerUserName } from "@/lib/notify/fan-out";
 import {
   assertPaymentAllowed,
   assertPaymentMutationAllowed,
@@ -93,6 +94,19 @@ export async function PATCH(request: Request, context: RouteContext) {
     });
   }
 
-  // payment → caller-only notify stubbed until Task 12.
+  const callerUserName = await loadCallerUserName(ctx.callup.caller);
+  if (callerUserName) {
+    const paid = parsed.data.hasPayment;
+    await fanOutChannelNotify({
+      event: "payment",
+      callupOwnerId: ctx.callup.caller,
+      callerUserName,
+      callupId,
+      statusAfter: ctx.callup.status,
+      title: paid ? "Pago marcado" : "Pago desmarcado",
+      body: `${updated.name}: ${paid ? "ya pagó" : "sin pago"}`,
+    });
+  }
+
   return jsonData(mapPlayerRowToDto(updated));
 }
