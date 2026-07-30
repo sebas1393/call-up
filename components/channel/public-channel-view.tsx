@@ -59,17 +59,21 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
   const isOwnChannel = Boolean(me?.userName && me.userName === slug);
 
   const load = useCallback(
-    async (page: number) => {
-      setLoading(true);
+    async (page: number, opts?: { soft?: boolean }) => {
+      if (!opts?.soft) {
+        setLoading(true);
+      }
       setError(null);
       const res = await fetch(
         `/api/v1/callers/${encodeURIComponent(slug)}/callups?pageIndex=${page}&pageSize=10`,
-        { credentials: "include" },
+        { credentials: "include", cache: "no-store" },
       );
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
         setError(body.detail ?? "No se encontraron convocatorias.");
-        setData(null);
+        if (!opts?.soft) {
+          setData(null);
+        }
         setLoading(false);
         return;
       }
@@ -108,7 +112,7 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
     callupIds: data?.items.map((i) => i.id) ?? [],
     enabled: Boolean(data && data.items.length > 0),
     onChange: () => {
-      void load(pageIndex);
+      void load(pageIndex, { soft: true });
     },
   });
 
@@ -266,7 +270,7 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
                         callupId={item.id}
                         sessionUserId={me?.id ?? null}
                         isOwner={isOwnChannel}
-                        onChanged={() => void load(pageIndex)}
+                        onChanged={() => void load(pageIndex, { soft: true })}
                       />
                     </div>
                   ) : null}

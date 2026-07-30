@@ -10,6 +10,7 @@ import {
   statusLabelEs,
   statusPillClass,
 } from "@/lib/format/callup-display";
+import { useCallupPlayersRealtime } from "@/lib/realtime/use-callup-players-realtime";
 
 export type CallupSummaryItem = {
   id: string;
@@ -46,12 +47,14 @@ export function CallupSummaryList() {
   const [copyFlash, setCopyFlash] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const load = useCallback(async (page: number) => {
-    setLoading(true);
+  const load = useCallback(async (page: number, opts?: { soft?: boolean }) => {
+    if (!opts?.soft) {
+      setLoading(true);
+    }
     setError(null);
     const res = await fetch(
       `/api/v1/callups/mine?pageIndex=${page}&pageSize=10`,
-      { credentials: "include" },
+      { credentials: "include", cache: "no-store" },
     );
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { detail?: string };
@@ -67,6 +70,14 @@ export function CallupSummaryList() {
   useEffect(() => {
     void load(pageIndex);
   }, [load, pageIndex]);
+
+  useCallupPlayersRealtime({
+    callupIds: data?.items.map((i) => i.id) ?? [],
+    enabled: Boolean(data && data.items.length > 0),
+    onChange: () => {
+      void load(pageIndex, { soft: true });
+    },
+  });
 
   async function copyKey(key: string, id: string) {
     try {

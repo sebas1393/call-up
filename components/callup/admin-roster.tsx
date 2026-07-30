@@ -6,7 +6,11 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ErrorCode } from "@/lib/constants/error-codes";
 import type { CallupStatus } from "@/lib/constants/callup";
-import { canMutateCallup } from "@/lib/format/callup-display";
+import {
+  canMutateCallup,
+  statusLabelEs,
+  statusPillClass,
+} from "@/lib/format/callup-display";
 import { useCallupPlayersRealtime } from "@/lib/realtime/use-callup-players-realtime";
 
 export type AdminPlayerDto = {
@@ -63,10 +67,10 @@ export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
   const [deleteTarget, setDeleteTarget] = useState<AdminPlayerDto | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
     setError(null);
     const res = await fetch(`/api/v1/callups/${callupId}`, {
       credentials: "include",
+      cache: "no-store",
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as ProblemBody;
@@ -269,9 +273,23 @@ export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
       ) : null}
 
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-        <h3 className="min-w-0 truncate text-sm font-semibold text-[var(--kortumo-navy)]">
-          Jugadores ({detail.rosterCount}/{detail.spotsQuantity})
-        </h3>
+        <div className="min-w-0">
+          <h3 className="min-w-0 truncate text-sm font-semibold text-[var(--kortumo-navy)]">
+            Jugadores ({detail.rosterCount}/{detail.spotsQuantity})
+          </h3>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+            <span
+              className={`rounded px-2 py-0.5 font-medium ${statusPillClass(detail.status)}`}
+            >
+              {statusLabelEs(detail.status)}
+            </span>
+            {detail.waitlistCount > 0 ? (
+              <span className="text-[var(--kortumo-navy)]/60">
+                espera {detail.waitlistCount}
+              </span>
+            ) : null}
+          </div>
+        </div>
         {canInscribir ? (
           <button
             type="button"

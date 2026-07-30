@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fetchMe, googleAuthHref } from "@/components/auth/me-api";
 import { AdminRoster } from "@/components/callup/admin-roster";
@@ -39,9 +39,13 @@ export function AdminCallupView({ callupId }: AdminCallupViewProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const hasDetailRef = useRef(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    const isInitial = !hasDetailRef.current;
+    if (isInitial) {
+      setLoading(true);
+    }
     setError(null);
 
     const me = await fetchMe();
@@ -68,6 +72,7 @@ export function AdminCallupView({ callupId }: AdminCallupViewProps) {
 
     const res = await fetch(`/api/v1/callups/${callupId}`, {
       credentials: "include",
+      cache: "no-store",
     });
     if (res.status === 404) {
       setError("No se encontró la convocatoria.");
@@ -88,6 +93,7 @@ export function AdminCallupView({ callupId }: AdminCallupViewProps) {
       return;
     }
 
+    hasDetailRef.current = true;
     setDetail(json.data);
     setLoading(false);
   }, [callupId, router]);

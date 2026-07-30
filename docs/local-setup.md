@@ -69,8 +69,9 @@ npm run test:coverage
 Open callup screens **must** update player lists/counts via Supabase **`postgres_changes`** without manual refresh (spec §11.7). This is **not** optional toast polish.
 
 1. Apply `supabase/migrations/0004_realtime_publication.sql` (adds `players` + `callups` to `supabase_realtime`), **or** Dashboard → Database → Publications → enable those tables.
-2. Client: `createBrowserClient` + `useCallupPlayersRealtime` on `/{username}` and expanded roster (`PlayerRoster`).
-3. Verify: two browsers/devices on the same callup → **Inscribir** on A appears on B without reload.
+2. Client: `createBrowserClient` + `useCallupPlayersRealtime` on `/{username}`, expanded `PlayerRoster`, **and** admin `AdminRoster` (`/callups/[id]`).
+3. Verify: two browsers/devices on the same callup → **Inscribir** / admin edit on A appears on B without reload.
+4. Optional: apply `0005_players_replica_identity.sql` (ASK FIRST) so DELETE payloads include `callup_id` (client already refetches on bare DELETE as fallback).
 
 ### Realtime toasts (push copy when app open)
 
@@ -96,6 +97,7 @@ Approach (no Serwist / next-pwa) — see [Next.js PWA guide](https://nextjs.org/
 
 - **Public `/{username}` shows zero callups while `/caller` has some** — anon could not SELECT `courts`; nested `courts!inner` dropped rows. Apply `0003_courts_anon_select.sql` (or re-run updated `0001_rls.sql` courts policies).
 - **Two devices: Inscribir only visible after refresh** — Realtime not published and/or no client `postgres_changes` subscription. Apply `0004_realtime_publication.sql` and confirm `useCallupPlayersRealtime` is mounted (spec §11.7).
+- **Admin changes don’t show on public device** — hard-refresh both; ensure AdminRoster hook is running; fetches use `cache: "no-store"`. DELETE without `callup_id` now triggers refetch; optional `0005` replica identity.
 - **`cannot add postgres_changes callbacks … after subscribe()`** — two hooks reused the same Realtime channel topic on the singleton browser client (e.g. list + roster with one callup id). Fixed by unique topic per hook instance (`useId`); hard-refresh if an old bundle is cached.
 - **401 on API** — session cookie missing; complete Google login via `/api/v1/auth/google`.
 - **403 caller routes** — set username once via `POST /api/v1/me/username`.
