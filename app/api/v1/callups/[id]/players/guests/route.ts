@@ -74,6 +74,21 @@ export async function POST(request: Request, context: RouteContext) {
     .map((p) => p.name);
 
   const actorIsOwner = Boolean(user && user.id === loaded.callup.caller);
+
+  // Logged-in non-owner Inscribir links the row to their session so they can
+  // self-promote from waitlist (US-009). Owner-created guests stay user_id null.
+  if (user && !actorIsOwner) {
+    const alreadyOnCallup = loaded.players.some((p) => p.user_id === user.id);
+    if (alreadyOnCallup) {
+      return jsonProblem({
+        status: 409,
+        title: "Conflict",
+        detail: "Ya estás inscrito en esta convocatoria.",
+        code: ErrorCode.VALIDATION_ERROR,
+      });
+    }
+  }
+
   const decision = decideGuestCreate({
     guestName: parsed.data.guestName,
     acceptWaitlist: parsed.data.acceptWaitlist,
@@ -96,12 +111,15 @@ export async function POST(request: Request, context: RouteContext) {
     });
   }
 
+  const linkedUserId =
+    user && !actorIsOwner ? user.id : null;
+
   const { data: created, error } = await writeClient
     .from("players")
     .insert({
       callup_id: callupId,
       name: decision.displayName,
-      user_id: null,
+      user_id: linkedUserId,
       has_payment: decision.hasPayment,
       is_wait_list: decision.isWaitList,
     })

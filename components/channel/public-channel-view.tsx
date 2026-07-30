@@ -151,7 +151,7 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
         )}
       </header>
 
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 px-4 py-6 sm:px-6">
+      <main className="mx-auto flex w-full max-w-lg min-w-0 flex-1 flex-col gap-5 overflow-x-hidden px-4 py-6 sm:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--kortumo-navy)]/50">
