@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState, useTransition } from "react";
 
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { canMutateCallup } from "@/lib/format/callup-display";
@@ -40,8 +41,11 @@ type PlayerRosterProps = {
 
 type ProblemBody = { detail?: string; code?: string };
 
+const ROW_GRID =
+  "grid grid-cols-[1.25rem_minmax(0,1fr)_2rem] items-center gap-x-2 px-3 py-2";
+
 /**
- * Roster / waitlist: Inscribir (guest MVP), payment, promote (US-009).
+ * Roster / waitlist: Inscribir (guest MVP), payment, self/owner promote (US-009).
  */
 export function PlayerRoster({
   callupId,
@@ -109,6 +113,7 @@ export function PlayerRoster({
       res.status === 409 &&
       body.code === ErrorCode.WAITLIST_CONFIRM_REQUIRED
     ) {
+      // Keep sheet open underneath; confirm dialog sits above (higher z-index).
       setWaitlistPrompt({
         guestName: name,
         message:
@@ -199,65 +204,30 @@ export function PlayerRoster({
   const waitlist = detail.players.filter((p) => p.isWaitList);
 
   return (
-    <div className="space-y-3">
+    <div className="box-border w-full max-w-full min-w-0 space-y-3 overflow-x-hidden">
       {error ? (
         <p className="text-sm text-[var(--kortumo-red)]" role="alert">
           {error}
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-[var(--kortumo-navy)]">
           Jugadores
         </h3>
         {canInscribir ? (
           <button
             type="button"
-            onClick={() => setGuestOpen((o) => !o)}
-            className="h-8 rounded-md bg-[var(--kortumo-red)] px-2.5 text-xs font-semibold text-white"
+            onClick={() => {
+              setGuestName("");
+              setGuestOpen(true);
+            }}
+            className="h-8 shrink-0 rounded-md bg-[var(--kortumo-red)] px-2.5 text-xs font-semibold text-white"
           >
             + Inscribir
           </button>
         ) : null}
       </div>
-
-      {guestOpen ? (
-        <form
-          onSubmit={onGuestSubmit}
-          className="flex flex-col gap-2 rounded-md border border-[var(--kortumo-navy)]/15 p-3"
-        >
-          <label
-            htmlFor={`guest-${callupId}`}
-            className="text-xs font-medium text-[var(--kortumo-navy)]"
-          >
-            Nombre del jugador
-          </label>
-          <input
-            id={`guest-${callupId}`}
-            value={guestName}
-            onChange={(e) => setGuestName(e.target.value)}
-            className="h-10 rounded-md border border-[var(--kortumo-navy)]/20 px-3 text-sm text-[var(--kortumo-navy)] focus:border-[var(--kortumo-blue-soft)] focus:outline-none"
-            placeholder="Pepe"
-            required
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setGuestOpen(false)}
-              className="h-9 flex-1 rounded-md border border-[var(--kortumo-navy)]/20 text-xs font-medium"
-            >
-              Cerrar
-            </button>
-            <button
-              type="submit"
-              disabled={pending}
-              className="h-9 flex-1 rounded-md bg-[var(--kortumo-navy)] text-xs font-semibold text-white disabled:opacity-60"
-            >
-              Inscribir
-            </button>
-          </div>
-        </form>
-      ) : null}
 
       <PlayerTable
         title="Nómina"
@@ -265,7 +235,8 @@ export function PlayerRoster({
         sessionUserId={sessionUserId}
         isOwner={isOwner}
         callupStatus={detail.status}
-        showPromote={false}
+        rosterFree={false}
+        mutable={mutable}
         pending={pending}
         onTogglePayment={togglePayment}
         onPromote={onPromote}
@@ -278,12 +249,62 @@ export function PlayerRoster({
           sessionUserId={sessionUserId}
           isOwner={isOwner}
           callupStatus={detail.status}
-          showPromote={rosterFree && mutable && isOwner}
+          rosterFree={rosterFree}
+          mutable={mutable}
           pending={pending}
           onTogglePayment={togglePayment}
           onPromote={onPromote}
         />
       ) : null}
+
+      <BottomSheet
+        open={guestOpen}
+        title="Inscribir jugador"
+        onClose={() => {
+          setGuestOpen(false);
+          setWaitlistPrompt(null);
+        }}
+      >
+        <form
+          onSubmit={onGuestSubmit}
+          className="box-border flex w-full max-w-full min-w-0 flex-col gap-3"
+        >
+          <label
+            htmlFor={`guest-${callupId}`}
+            className="text-sm font-medium text-[var(--kortumo-navy)]"
+          >
+            Nombre del jugador
+          </label>
+          <input
+            id={`guest-${callupId}`}
+            value={guestName}
+            onChange={(e) => setGuestName(e.target.value)}
+            className="box-border h-11 w-full max-w-full min-w-0 rounded-md border border-[var(--kortumo-navy)]/20 px-3 text-base text-[var(--kortumo-navy)] focus:border-[var(--kortumo-blue-soft)] focus:outline-none"
+            placeholder="Pepe"
+            required
+            autoFocus
+          />
+          <div className="flex w-full min-w-0 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setGuestOpen(false);
+                setWaitlistPrompt(null);
+              }}
+              className="h-11 min-w-0 flex-1 rounded-md border border-[var(--kortumo-navy)]/20 text-sm font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={pending}
+              className="h-11 min-w-0 flex-1 rounded-md bg-[var(--kortumo-navy)] text-sm font-semibold text-white disabled:opacity-60"
+            >
+              Inscribir
+            </button>
+          </div>
+        </form>
+      </BottomSheet>
 
       <ConfirmDialog
         open={waitlistPrompt != null}
@@ -314,7 +335,8 @@ function PlayerTable({
   sessionUserId,
   isOwner,
   callupStatus,
-  showPromote,
+  rosterFree,
+  mutable,
   pending,
   onTogglePayment,
   onPromote,
@@ -324,7 +346,8 @@ function PlayerTable({
   sessionUserId: string | null;
   isOwner: boolean;
   callupStatus: CallupStatus;
-  showPromote: boolean;
+  rosterFree: boolean;
+  mutable: boolean;
   pending: boolean;
   onTogglePayment: (p: PlayerDto) => void;
   onPromote: (p: PlayerDto) => void;
@@ -336,57 +359,73 @@ function PlayerTable({
       callupStatus === "Full");
 
   return (
-    <div>
+    <div className="box-border w-full max-w-full min-w-0">
       <p className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--kortumo-navy)]/55">
         {title}
       </p>
       {players.length === 0 ? (
         <p className="text-xs text-[var(--kortumo-navy)]/50">Nadie aún.</p>
       ) : (
-        <div className="overflow-hidden rounded-md border border-[var(--kortumo-navy)]/10">
+        <div className="box-border w-full max-w-full min-w-0 overflow-hidden rounded-md border border-[var(--kortumo-navy)]/10">
           <div
-            className="grid grid-cols-[1.25rem_1fr_auto] items-center gap-2 border-b border-[var(--kortumo-navy)]/10 bg-[var(--kortumo-navy)]/[0.04] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--kortumo-navy)]/65"
+            className={`${ROW_GRID} border-b border-[var(--kortumo-navy)]/10 bg-[var(--kortumo-navy)]/[0.04] text-sm`}
             role="row"
           >
-            <span className="sr-only">#</span>
-            <span>Nombre</span>
-            <span className="text-right">Ya pagó</span>
+            {/* Keep an in-flow cell (not sr-only) so grid columns stay aligned */}
+            <span className="block" aria-hidden>
+              &nbsp;
+            </span>
+            <span className="text-left text-xs font-semibold uppercase tracking-wide text-[var(--kortumo-navy)]/65">
+              Nombre
+            </span>
+            <span className="justify-self-center" title="Ya pagó" aria-label="Ya pagó">
+              💵
+            </span>
           </div>
           <ul className="divide-y divide-[var(--kortumo-navy)]/10">
             {players.map((p, i) => {
               const canPay = paymentAllowed && isOwner;
-              const canPromote = showPromote && p.isWaitList && isOwner;
+              const isSelf = Boolean(
+                sessionUserId && p.userId === sessionUserId,
+              );
+              const canPromote =
+                p.isWaitList &&
+                mutable &&
+                rosterFree &&
+                (isOwner || isSelf);
               return (
                 <li
                   key={p.id}
-                  className="grid grid-cols-[1.25rem_1fr_auto] items-center gap-2 px-3 py-2 text-sm text-[var(--kortumo-navy)]"
+                  className={`${ROW_GRID} text-sm text-[var(--kortumo-navy)]`}
                 >
                   <span className="text-xs text-[var(--kortumo-navy)]/45">
                     {i + 1}
                   </span>
-                  <span className="min-w-0 truncate font-medium">
-                    {p.name}
-                    {sessionUserId && p.userId === sessionUserId ? (
-                      <span className="ml-1 text-xs font-normal text-[var(--kortumo-teal)]">
-                        (tú)
-                      </span>
-                    ) : null}
+                  <div className="min-w-0">
+                    <span className="block truncate font-medium" title={p.name}>
+                      {p.name}
+                      {isSelf ? (
+                        <span className="ml-1 text-xs font-normal text-[var(--kortumo-teal)]">
+                          (tú)
+                        </span>
+                      ) : null}
+                    </span>
                     {canPromote ? (
                       <button
                         type="button"
                         disabled={pending}
                         onClick={() => onPromote(p)}
-                        className="ml-2 text-xs font-semibold text-[var(--kortumo-blue-soft)] disabled:opacity-60"
+                        className="mt-0.5 text-xs font-semibold text-[var(--kortumo-blue-soft)] disabled:opacity-60"
                       >
-                        Promover
+                        {isSelf && !isOwner ? "Promoverme" : "Promover"}
                       </button>
                     ) : null}
-                  </span>
+                  </div>
                   <button
                     type="button"
                     disabled={!canPay || pending}
                     onClick={() => onTogglePayment(p)}
-                    className="justify-self-end text-base leading-none disabled:opacity-40"
+                    className="justify-self-center text-base leading-none disabled:opacity-40"
                     aria-label={
                       p.hasPayment ? "Marcar sin pago" : "Marcar pago"
                     }

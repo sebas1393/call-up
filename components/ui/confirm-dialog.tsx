@@ -1,5 +1,8 @@
 "use client";
 
+import { useId } from "react";
+import { createPortal } from "react-dom";
+
 type ConfirmDialogProps = {
   open: boolean;
   title: string;
@@ -12,7 +15,7 @@ type ConfirmDialogProps = {
 };
 
 /**
- * Simple confirm dialog (waitlist / destructive actions). Portaled via fixed overlay.
+ * Confirm dialog above sheets/forms (z-[60], portaled to body).
  */
 export function ConfirmDialog({
   open,
@@ -24,18 +27,20 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  if (!open) return null;
+  const titleId = useId();
 
-  return (
+  if (!open || typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4 sm:items-center"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="confirm-dialog-title"
+      aria-labelledby={titleId}
     >
-      <div className="w-full max-w-sm rounded-md bg-white p-5 shadow-lg">
+      <div className="box-border w-full max-w-sm rounded-md bg-white p-5 shadow-lg">
         <h2
-          id="confirm-dialog-title"
+          id={titleId}
           className="font-[family-name:var(--font-montserrat)] text-lg font-bold text-[var(--kortumo-navy)]"
         >
           {title}
@@ -60,6 +65,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

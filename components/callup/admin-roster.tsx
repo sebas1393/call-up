@@ -479,7 +479,10 @@ function AdminPlayerTable({
             className={`${ROW_GRID} border-b border-[var(--kortumo-navy)]/10 bg-[var(--kortumo-navy)]/[0.04] text-center text-sm`}
             role="row"
           >
-            <span className="sr-only">#</span>
+            {/* Keep an in-flow cell (not sr-only) so grid columns stay aligned */}
+            <span className="block" aria-hidden>
+              &nbsp;
+            </span>
             <span className="text-left text-xs font-semibold uppercase tracking-wide text-[var(--kortumo-navy)]/65">
               Nombre
             </span>
