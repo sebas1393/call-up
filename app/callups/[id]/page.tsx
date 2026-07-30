@@ -11,7 +11,7 @@ export default async function AdminCallupPage({ params }: PageProps) {
   return (
     <div className="flex min-h-full flex-1 flex-col bg-[var(--kortumo-white)]">
       <CallerHeader />
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-6 sm:px-6">
+      <main className="mx-auto flex w-full max-w-lg min-w-0 flex-1 flex-col overflow-x-hidden px-4 py-6 sm:px-6">
         <AdminCallupView callupId={id} />
       </main>
     </div>

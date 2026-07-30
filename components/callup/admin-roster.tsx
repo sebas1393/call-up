@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState, useTransition } from "react";
 
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ErrorCode } from "@/lib/constants/error-codes";
 import type { CallupStatus } from "@/lib/constants/callup";
@@ -38,8 +39,12 @@ type AdminRosterProps = {
 
 type ProblemBody = { detail?: string; code?: string };
 
+/** Fixed action columns: # | Nombre | 💵 | edit | delete */
+const ROW_GRID =
+  "grid grid-cols-[1.25rem_minmax(0,1fr)_2rem_2rem_2rem] items-center gap-x-1 px-2 py-2";
+
 /**
- * Owner roster: Inscribir, edit name, delete, payment, promote (US-005).
+ * Owner roster: Inscribir (sheet), edit/delete/payment/promote (US-005 Task 26).
  */
 export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
   const [detail, setDetail] = useState<CallupDetail | null>(null);
@@ -51,7 +56,9 @@ export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
   >(null);
   const [guestOpen, setGuestOpen] = useState(false);
   const [guestName, setGuestName] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingPlayer, setEditingPlayer] = useState<AdminPlayerDto | null>(
+    null,
+  );
   const [editName, setEditName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<AdminPlayerDto | null>(null);
 
@@ -171,17 +178,20 @@ export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
   }
 
   function startEdit(player: AdminPlayerDto) {
-    setEditingId(player.id);
+    setEditingPlayer(player);
     setEditName(player.name);
     setError(null);
   }
 
   function cancelEdit() {
-    setEditingId(null);
+    setEditingPlayer(null);
     setEditName("");
   }
 
-  function saveEdit(playerId: string) {
+  function onEditSubmit(e: FormEvent) {
+    e.preventDefault();
+    const player = editingPlayer;
+    if (!player) return;
     const name = editName.trim();
     if (!name) {
       setError("El nombre del jugador es obligatorio.");
@@ -189,7 +199,7 @@ export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
     }
     startTransition(async () => {
       const res = await fetch(
-        `/api/v1/callups/${callupId}/players/${playerId}`,
+        `/api/v1/callups/${callupId}/players/${player.id}`,
         {
           method: "PATCH",
           credentials: "include",
@@ -202,8 +212,7 @@ export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
         setError(body.detail ?? "No se pudo guardar el nombre.");
         return;
       }
-      setEditingId(null);
-      setEditName("");
+      cancelEdit();
       refresh();
     });
   }
@@ -223,7 +232,7 @@ export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
         return;
       }
       setDeleteTarget(null);
-      if (editingId === target.id) cancelEdit();
+      if (editingPlayer?.id === target.id) cancelEdit();
       refresh();
     });
   }
@@ -252,65 +261,30 @@ export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
   const waitlist = detail.players.filter((p) => p.isWaitList);
 
   return (
-    <div className="space-y-3">
+    <div className="box-border w-full max-w-full min-w-0 space-y-3 overflow-x-hidden">
       {error ? (
         <p className="text-sm text-[var(--kortumo-red)]" role="alert">
           {error}
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[var(--kortumo-navy)]">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <h3 className="min-w-0 truncate text-sm font-semibold text-[var(--kortumo-navy)]">
           Jugadores ({detail.rosterCount}/{detail.spotsQuantity})
         </h3>
         {canInscribir ? (
           <button
             type="button"
-            onClick={() => setGuestOpen((o) => !o)}
-            className="h-8 rounded-md bg-[var(--kortumo-red)] px-2.5 text-xs font-semibold text-white"
+            onClick={() => {
+              setGuestName("");
+              setGuestOpen(true);
+            }}
+            className="h-8 shrink-0 rounded-md bg-[var(--kortumo-red)] px-2.5 text-xs font-semibold text-white"
           >
             + Inscribir
           </button>
         ) : null}
       </div>
-
-      {guestOpen ? (
-        <form
-          onSubmit={onGuestSubmit}
-          className="flex flex-col gap-2 rounded-md border border-[var(--kortumo-navy)]/15 p-3"
-        >
-          <label
-            htmlFor={`admin-guest-${callupId}`}
-            className="text-xs font-medium text-[var(--kortumo-navy)]"
-          >
-            Nombre del jugador
-          </label>
-          <input
-            id={`admin-guest-${callupId}`}
-            value={guestName}
-            onChange={(e) => setGuestName(e.target.value)}
-            className="h-10 rounded-md border border-[var(--kortumo-navy)]/20 px-3 text-sm text-[var(--kortumo-navy)] focus:border-[var(--kortumo-blue-soft)] focus:outline-none"
-            placeholder="Pepe"
-            required
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setGuestOpen(false)}
-              className="h-9 flex-1 rounded-md border border-[var(--kortumo-navy)]/20 text-xs font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={pending}
-              className="h-9 flex-1 rounded-md bg-[var(--kortumo-navy)] text-xs font-semibold text-white disabled:opacity-60"
-            >
-              Inscribir
-            </button>
-          </div>
-        </form>
-      ) : null}
 
       <AdminPlayerTable
         title="Nómina"
@@ -319,12 +293,7 @@ export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
         mutable={mutable}
         showPromote={false}
         pending={pending}
-        editingId={editingId}
-        editName={editName}
-        onEditNameChange={setEditName}
         onStartEdit={startEdit}
-        onCancelEdit={cancelEdit}
-        onSaveEdit={saveEdit}
         onRequestDelete={setDeleteTarget}
         onTogglePayment={togglePayment}
         onPromote={onPromote}
@@ -338,17 +307,97 @@ export function AdminRoster({ callupId, onChanged }: AdminRosterProps) {
           mutable={mutable}
           showPromote={rosterFree && mutable}
           pending={pending}
-          editingId={editingId}
-          editName={editName}
-          onEditNameChange={setEditName}
           onStartEdit={startEdit}
-          onCancelEdit={cancelEdit}
-          onSaveEdit={saveEdit}
           onRequestDelete={setDeleteTarget}
           onTogglePayment={togglePayment}
           onPromote={onPromote}
         />
       ) : null}
+
+      <BottomSheet
+        open={guestOpen}
+        title="Inscribir jugador"
+        onClose={() => setGuestOpen(false)}
+      >
+        <form
+          onSubmit={onGuestSubmit}
+          className="box-border flex w-full max-w-full min-w-0 flex-col gap-3"
+        >
+          <label
+            htmlFor={`admin-guest-${callupId}`}
+            className="text-sm font-medium text-[var(--kortumo-navy)]"
+          >
+            Nombre del jugador
+          </label>
+          <input
+            id={`admin-guest-${callupId}`}
+            value={guestName}
+            onChange={(e) => setGuestName(e.target.value)}
+            className="box-border h-11 w-full max-w-full min-w-0 rounded-md border border-[var(--kortumo-navy)]/20 px-3 text-base text-[var(--kortumo-navy)] focus:border-[var(--kortumo-blue-soft)] focus:outline-none"
+            placeholder="Pepe"
+            required
+            autoFocus
+          />
+          <div className="flex w-full min-w-0 gap-2">
+            <button
+              type="button"
+              onClick={() => setGuestOpen(false)}
+              className="h-11 min-w-0 flex-1 rounded-md border border-[var(--kortumo-navy)]/20 text-sm font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={pending}
+              className="h-11 min-w-0 flex-1 rounded-md bg-[var(--kortumo-navy)] text-sm font-semibold text-white disabled:opacity-60"
+            >
+              Inscribir
+            </button>
+          </div>
+        </form>
+      </BottomSheet>
+
+      <BottomSheet
+        open={editingPlayer != null}
+        title="Editar nombre"
+        onClose={cancelEdit}
+      >
+        <form
+          onSubmit={onEditSubmit}
+          className="box-border flex w-full max-w-full min-w-0 flex-col gap-3"
+        >
+          <label
+            htmlFor={`admin-edit-${callupId}`}
+            className="text-sm font-medium text-[var(--kortumo-navy)]"
+          >
+            Nombre del jugador
+          </label>
+          <input
+            id={`admin-edit-${callupId}`}
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            className="box-border h-11 w-full max-w-full min-w-0 rounded-md border border-[var(--kortumo-navy)]/20 px-3 text-base text-[var(--kortumo-navy)] focus:border-[var(--kortumo-blue-soft)] focus:outline-none"
+            required
+            autoFocus
+          />
+          <div className="flex w-full min-w-0 gap-2">
+            <button
+              type="button"
+              onClick={cancelEdit}
+              className="h-11 min-w-0 flex-1 rounded-md border border-[var(--kortumo-navy)]/20 text-sm font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={pending}
+              className="h-11 min-w-0 flex-1 rounded-md bg-[var(--kortumo-navy)] text-sm font-semibold text-white disabled:opacity-60"
+            >
+              Guardar
+            </button>
+          </div>
+        </form>
+      </BottomSheet>
 
       <ConfirmDialog
         open={waitlistPrompt != null}
@@ -395,12 +444,7 @@ function AdminPlayerTable({
   mutable,
   showPromote,
   pending,
-  editingId,
-  editName,
-  onEditNameChange,
   onStartEdit,
-  onCancelEdit,
-  onSaveEdit,
   onRequestDelete,
   onTogglePayment,
   onPromote,
@@ -411,12 +455,7 @@ function AdminPlayerTable({
   mutable: boolean;
   showPromote: boolean;
   pending: boolean;
-  editingId: string | null;
-  editName: string;
-  onEditNameChange: (v: string) => void;
   onStartEdit: (p: AdminPlayerDto) => void;
-  onCancelEdit: () => void;
-  onSaveEdit: (playerId: string) => void;
   onRequestDelete: (p: AdminPlayerDto) => void;
   onTogglePayment: (p: AdminPlayerDto) => void;
   onPromote: (p: AdminPlayerDto) => void;
@@ -428,111 +467,86 @@ function AdminPlayerTable({
       callupStatus === "Full");
 
   return (
-    <div>
+    <div className="box-border w-full max-w-full min-w-0">
       <p className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--kortumo-navy)]/55">
         {title}
       </p>
       {players.length === 0 ? (
         <p className="text-xs text-[var(--kortumo-navy)]/50">Nadie aún.</p>
       ) : (
-        <div className="overflow-hidden rounded-md border border-[var(--kortumo-navy)]/10">
+        <div className="box-border w-full max-w-full min-w-0 overflow-hidden rounded-md border border-[var(--kortumo-navy)]/10">
           <div
-            className="grid grid-cols-[1.25rem_1fr_auto_auto] items-center gap-2 border-b border-[var(--kortumo-navy)]/10 bg-[var(--kortumo-navy)]/[0.04] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--kortumo-navy)]/65"
+            className={`${ROW_GRID} border-b border-[var(--kortumo-navy)]/10 bg-[var(--kortumo-navy)]/[0.04] text-center text-sm`}
             role="row"
           >
             <span className="sr-only">#</span>
-            <span>Nombre</span>
-            <span className="text-right">Ya pagó</span>
-            <span className="sr-only">Acciones</span>
+            <span className="text-left text-xs font-semibold uppercase tracking-wide text-[var(--kortumo-navy)]/65">
+              Nombre
+            </span>
+            <span className="justify-self-center" title="Ya pagó" aria-label="Ya pagó">
+              💵
+            </span>
+            <span className="justify-self-center text-[var(--kortumo-navy)]/55" aria-label="Editar">
+              <PencilIcon />
+            </span>
+            <span className="justify-self-center text-[var(--kortumo-navy)]/55" aria-label="Eliminar">
+              <TrashIcon />
+            </span>
           </div>
           <ul className="divide-y divide-[var(--kortumo-navy)]/10">
             {players.map((p, i) => {
-              const isEditing = editingId === p.id;
               const canPromote = showPromote && p.isWaitList;
               return (
-                <li
-                  key={p.id}
-                  className="grid grid-cols-[1.25rem_1fr_auto_auto] items-center gap-2 px-3 py-2 text-sm text-[var(--kortumo-navy)]"
-                >
-                  <span className="text-xs text-[var(--kortumo-navy)]/45">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0">
-                    {isEditing ? (
-                      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-                        <input
-                          value={editName}
-                          onChange={(e) => onEditNameChange(e.target.value)}
-                          className="h-8 w-full min-w-0 rounded border border-[var(--kortumo-navy)]/20 px-2 text-sm focus:border-[var(--kortumo-blue-soft)] focus:outline-none"
-                          aria-label="Editar nombre"
-                          autoFocus
-                        />
-                        <div className="flex shrink-0 gap-1">
-                          <button
-                            type="button"
-                            disabled={pending}
-                            onClick={() => onSaveEdit(p.id)}
-                            className="h-8 rounded bg-[var(--kortumo-navy)] px-2 text-xs font-semibold text-white disabled:opacity-60"
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            type="button"
-                            disabled={pending}
-                            onClick={onCancelEdit}
-                            className="h-8 rounded border border-[var(--kortumo-navy)]/20 px-2 text-xs font-medium"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="block truncate font-medium">
+                <li key={p.id} className="min-w-0 text-sm text-[var(--kortumo-navy)]">
+                  <div className={ROW_GRID}>
+                    <span className="text-xs text-[var(--kortumo-navy)]/45">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <span className="block truncate font-medium" title={p.name}>
                         {p.name}
-                        {canPromote ? (
-                          <button
-                            type="button"
-                            disabled={pending}
-                            onClick={() => onPromote(p)}
-                            className="ml-2 text-xs font-semibold text-[var(--kortumo-blue-soft)] disabled:opacity-60"
-                          >
-                            Promover
-                          </button>
-                        ) : null}
                       </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    disabled={!paymentAllowed || pending}
-                    onClick={() => onTogglePayment(p)}
-                    className="justify-self-end text-base leading-none disabled:opacity-40"
-                    aria-label={
-                      p.hasPayment ? "Marcar sin pago" : "Marcar pago"
-                    }
-                    title="Ya pagó"
-                  >
-                    {p.hasPayment ? (
-                      <span className="text-[var(--kortumo-teal)]" aria-hidden>
-                        ✓
-                      </span>
-                    ) : (
-                      <span
-                        className="font-bold text-[var(--kortumo-red)]"
-                        aria-hidden
-                      >
-                        ✕
-                      </span>
-                    )}
-                  </button>
-                  <div className="flex items-center gap-1 justify-self-end">
-                    {mutable && !isEditing ? (
+                      {canPromote ? (
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => onPromote(p)}
+                          className="mt-0.5 text-xs font-semibold text-[var(--kortumo-blue-soft)] disabled:opacity-60"
+                        >
+                          Promover a nómina
+                        </button>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!paymentAllowed || pending}
+                      onClick={() => onTogglePayment(p)}
+                      className="justify-self-center text-base leading-none disabled:opacity-40"
+                      aria-label={
+                        p.hasPayment ? "Marcar sin pago" : "Marcar pago"
+                      }
+                      title="Ya pagó"
+                    >
+                      {p.hasPayment ? (
+                        <span className="text-[var(--kortumo-teal)]" aria-hidden>
+                          ✓
+                        </span>
+                      ) : (
+                        <span
+                          className="font-bold text-[var(--kortumo-red)]"
+                          aria-hidden
+                        >
+                          ✕
+                        </span>
+                      )}
+                    </button>
+                    {mutable ? (
                       <>
                         <button
                           type="button"
                           disabled={pending}
                           onClick={() => onStartEdit(p)}
-                          className="rounded p-1 text-[var(--kortumo-navy)]/70 hover:bg-[var(--kortumo-navy)]/5 disabled:opacity-60"
+                          className="justify-self-center rounded p-1 text-[var(--kortumo-navy)]/70 hover:bg-[var(--kortumo-navy)]/5 disabled:opacity-60"
                           aria-label={`Editar ${p.name}`}
                           title="Editar"
                         >
@@ -542,7 +556,7 @@ function AdminPlayerTable({
                           type="button"
                           disabled={pending}
                           onClick={() => onRequestDelete(p)}
-                          className="rounded p-1 text-[var(--kortumo-red)] hover:bg-[var(--kortumo-red)]/10 disabled:opacity-60"
+                          className="justify-self-center rounded p-1 text-[var(--kortumo-red)] hover:bg-[var(--kortumo-red)]/10 disabled:opacity-60"
                           aria-label={`Eliminar ${p.name}`}
                           title="Eliminar"
                         >
@@ -550,7 +564,10 @@ function AdminPlayerTable({
                         </button>
                       </>
                     ) : (
-                      <span className="w-14" aria-hidden />
+                      <>
+                        <span className="justify-self-center" aria-hidden />
+                        <span className="justify-self-center" aria-hidden />
+                      </>
                     )}
                   </div>
                 </li>
