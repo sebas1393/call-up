@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { LogoK } from "@/components/brand/logo-k";
+import { InstallAppPrompt } from "@/components/pwa/install-app-prompt";
 import {
   KORTUMO_PRODUCT_NAME,
   KORTUMO_PRODUCT_SUBTITLE,
@@ -72,6 +73,10 @@ export default function HomePage() {
                 Soy jugador
               </Link>
             </div>
+            <InstallAppPrompt
+              variant="onDark"
+              className="animate-[kortumo-rise_0.8s_ease-out_0.4s_both]"
+            />
           </div>
         </div>
       </section>

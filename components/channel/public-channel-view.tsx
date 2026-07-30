@@ -7,6 +7,7 @@ import { FollowButton } from "@/components/channel/follow-button";
 import { PlayerRoster } from "@/components/callup/player-roster";
 import { fetchMe, googleAuthHref, type MeProfile } from "@/components/auth/me-api";
 import { LogoK } from "@/components/brand/logo-k";
+import { InstallAppPrompt } from "@/components/pwa/install-app-prompt";
 import type { CallupStatus } from "@/lib/constants/callup";
 import {
   formatMatchAtEs,
@@ -168,7 +169,10 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
               Convocatorias
             </p>
           </div>
-          <FollowButton userName={slug} isOwnChannel={isOwnChannel} />
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <FollowButton userName={slug} isOwnChannel={isOwnChannel} />
+            <InstallAppPrompt variant="onLight" />
+          </div>
         </div>
 
         {loading && !data ? (
