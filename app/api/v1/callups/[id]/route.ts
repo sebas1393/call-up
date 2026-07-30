@@ -13,6 +13,7 @@ import {
   type PlayerRow,
 } from "@/lib/services/callups";
 import { ensureCallerCourtLink } from "@/lib/services/courts";
+import { syncCallupStatus } from "@/lib/services/player-routes";
 import { updateCallupBodySchema } from "@/lib/validators/callup";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -104,11 +105,22 @@ export async function GET(_request: Request, context: RouteContext) {
     address: "",
   };
 
+  const callup = mapCallupRow(row);
+  const players = (row.players ?? []) as PlayerRow[];
+  const counts = countPlayers(players);
+  // Heal stale Open/Full if a prior update was blocked by RLS (non-owner join).
+  const status = await syncCallupStatus(
+    supabase,
+    callup,
+    counts.rosterCount,
+    counts.waitlistCount,
+  );
+
   return jsonData(
     toCallupDetailDto({
-      callup: mapCallupRow(row),
+      callup: { ...callup, status },
       court,
-      players: (row.players ?? []) as PlayerRow[],
+      players,
     }),
   );
 }

@@ -10,7 +10,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Kortumo",
     description:
       "Convocatorias deportivas: crea partidos, suscríbete y recibe avisos.",
-    start_url: "/",
+    // Open caller dashboard; session gate redirects to login if needed (US-001/002).
+    start_url: "/caller",
     display: "standalone",
     background_color: "#003366",
     theme_color: "#003366",

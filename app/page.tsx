@@ -1,7 +1,5 @@
-import Link from "next/link";
-
+import { HomeCallerGate } from "@/components/auth/home-caller-gate";
 import { LogoK } from "@/components/brand/logo-k";
-import { InstallAppPrompt } from "@/components/pwa/install-app-prompt";
 import {
   KORTUMO_PRODUCT_NAME,
   KORTUMO_PRODUCT_SUBTITLE,
@@ -10,6 +8,7 @@ import {
 
 /**
  * US-001 landing — brand-first hero (Kortumo), role CTAs, coming-soon below fold.
+ * Ready callers are redirected to `/caller` (US-001/002 / Task 28).
  */
 export default function HomePage() {
   return (
@@ -59,24 +58,7 @@ export default function HomePage() {
               tiempo real. {KORTUMO_TAGLINES[0]}. {KORTUMO_TAGLINES[2]}.
             </p>
 
-            <div className="animate-[kortumo-rise_0.8s_ease-out_0.32s_both] flex w-full max-w-md flex-col gap-3 sm:flex-row sm:items-stretch">
-              <Link
-                href="/api/v1/auth/google?intent=caller&redirectTo=/caller"
-                className="inline-flex min-h-14 w-full flex-1 items-center justify-center rounded-md bg-[var(--kortumo-red)] px-5 py-3.5 text-center text-sm font-semibold leading-snug text-white transition-transform duration-200 hover:scale-[1.02] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-6"
-              >
-                Creador de Convocatoria (Caller)
-              </Link>
-              <Link
-                href="/player"
-                className="inline-flex min-h-14 w-full flex-1 items-center justify-center rounded-md border-2 border-white/80 bg-transparent px-5 py-3.5 text-center text-sm font-semibold leading-snug text-white transition-colors duration-200 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-6"
-              >
-                Soy jugador
-              </Link>
-            </div>
-            <InstallAppPrompt
-              variant="onDark"
-              className="animate-[kortumo-rise_0.8s_ease-out_0.4s_both]"
-            />
+            <HomeCallerGate />
           </div>
         </div>
       </section>

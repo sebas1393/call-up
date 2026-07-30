@@ -56,11 +56,13 @@ Server sends pushes via `lib/notify/fan-out.ts` + `VAPID_PRIVATE_KEY` on events 
 
 ## Session persistence
 
-Auth cookies are refreshed by Next.js **`proxy.ts`** (`lib/db/update-session.ts`) on each matched request. Without this, closing the app after the access JWT expires looks like a logout.
+Auth cookies are refreshed by Next.js **`proxy.ts`** (`lib/db/update-session.ts`) on each matched request (including `/`). Client also runs `SessionKeepAlive`. Cookies use long `maxAge` + `secure` in production (`lib/db/cookie-options.ts`).
 
 - Stay logged in until **Cerrar sesión** / `POST /api/v1/auth/logout`.
-- In Supabase Dashboard → Authentication → Settings, keep **JWT expiry** reasonable (e.g. 1h) and **refresh token** rotation enabled as you prefer; refresh tokens must remain valid for multi-day return visits.
-- Production must be HTTPS so cookies behave correctly on mobile / PWA.
+- Ready callers opening `/` or the installed PWA (`start_url` `/caller`) land on the convocatorias dashboard.
+- After deploying cookie/proxy fixes, **sign in once more** so the browser stores cookies with the new attributes.
+- In Supabase Dashboard → Authentication → Settings, keep **JWT expiry** reasonable (e.g. 1h); refresh tokens must remain valid for multi-day return visits.
+- Production must be HTTPS.
 
 ## Run
 

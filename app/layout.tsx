@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat, Open_Sans } from "next/font/google";
 
+import { SessionKeepAlive } from "@/components/auth/session-keep-alive";
 import { RegisterServiceWorker } from "@/components/pwa/register-service-worker";
 import "./globals.css";
 
@@ -43,6 +44,7 @@ export default function RootLayout({
       className={`${montserrat.variable} ${openSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        <SessionKeepAlive />
         <RegisterServiceWorker />
         {children}
       </body>

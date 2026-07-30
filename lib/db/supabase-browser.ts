@@ -2,8 +2,10 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 
+import { supabaseCookieOptions } from "@/lib/db/cookie-options";
+
 /**
- * Browser Supabase client (anon key + cookies). Used for Realtime `postgres_changes`.
+ * Browser Supabase client (anon key + cookies). Used for Realtime + client session refresh.
  * Do not import from Server Components.
  */
 export function createSupabaseBrowserClient() {
@@ -14,5 +16,7 @@ export function createSupabaseBrowserClient() {
       "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY",
     );
   }
-  return createBrowserClient(url, anonKey);
+  return createBrowserClient(url, anonKey, {
+    cookieOptions: supabaseCookieOptions,
+  });
 }

@@ -4,6 +4,7 @@ import type { CallupStatus } from "@/lib/constants/callup";
 import { ErrorCode } from "@/lib/constants/error-codes";
 import { jsonProblem, unauthorized } from "@/lib/api/http";
 import { createSupabaseServerClient } from "@/lib/db/supabase-server";
+import { createSupabaseServiceClient } from "@/lib/db/supabase-service";
 import {
   countPlayers,
   sortPlayersByEnrollment,
@@ -128,10 +129,13 @@ export async function requireCallupPlayersContext(
 
 /**
  * Recomputes Open/Full/Closed after roster/waitlist mutations (never clears cancelled).
+ * Writes via **service_role** — RLS only allows the owner to UPDATE callups, but
+ * players/guests trigger capacity changes and must still persist status.
+ *
  * @returns Status after sync (for notify noise window).
  */
 export async function syncCallupStatus(
-  supabase: SupabaseClient,
+  _supabase: SupabaseClient,
   callup: CallupRow,
   rosterCount: number,
   waitlistCount: number,
@@ -148,10 +152,14 @@ export async function syncCallupStatus(
     },
   });
   if (next.changed) {
-    await supabase
+    const service = createSupabaseServiceClient();
+    const { error } = await service
       .from("callups")
       .update({ status: next.status })
       .eq("id", callup.id);
+    if (error) {
+      console.error("syncCallupStatus update failed", error);
+    }
   }
   return next.status;
 }

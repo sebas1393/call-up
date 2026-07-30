@@ -24,7 +24,10 @@ export async function fetchMe(): Promise<
   | { ok: true; data: MeProfile }
   | { ok: false; status: number; detail: string }
 > {
-  const res = await fetch("/api/v1/me", { credentials: "include" });
+  const res = await fetch("/api/v1/me", {
+    credentials: "include",
+    cache: "no-store",
+  });
   if (res.status === 401) {
     return { ok: false, status: 401, detail: "Debes iniciar sesión." };
   }

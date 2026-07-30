@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { supabaseCookieOptions } from "@/lib/db/cookie-options";
+
 /**
  * Refreshes Supabase Auth cookies on each matched request (spec: stay logged in until logout).
  * Required because Server Components cannot write cookies after a token refresh.
@@ -19,6 +21,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   }
 
   const supabase = createServerClient(url, anonKey, {
+    cookieOptions: supabaseCookieOptions,
     cookies: {
       getAll() {
         return request.cookies.getAll();
@@ -31,7 +34,10 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
           request,
         });
         cookiesToSet.forEach(({ name, value, options }) => {
-          supabaseResponse.cookies.set(name, value, options);
+          supabaseResponse.cookies.set(name, value, {
+            ...supabaseCookieOptions,
+            ...options,
+          });
         });
       },
     },

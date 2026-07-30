@@ -11,9 +11,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Root must be explicit — some matcher patterns skip `/` (PWA start_url).
+    "/",
     /*
-     * All paths except static assets / images.
-     * Auth refresh must run on pages + API so expired JWTs are renewed.
+     * All other paths except static assets / images.
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|js|ico)$).*)",
   ],
