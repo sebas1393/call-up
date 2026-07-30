@@ -232,7 +232,7 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
                         </span>
                         {!open && canJoin ? (
                           <span className="font-medium text-[var(--kortumo-teal)]">
-                            Inscribir
+                            {me?.id ? "Inscribirme" : "Inscribir"}
                           </span>
                         ) : null}
                       </span>

@@ -41,11 +41,15 @@ type PlayerRosterProps = {
 
 type ProblemBody = { detail?: string; code?: string };
 
+type WaitlistPrompt =
+  | { kind: "guest"; guestName: string; message: string }
+  | { kind: "self"; message: string };
+
 const ROW_GRID =
   "grid grid-cols-[1.25rem_minmax(0,1fr)_2rem] items-center gap-x-2 px-3 py-2";
 
 /**
- * Roster / waitlist: Inscribir (guest MVP), payment, self/owner promote (US-009).
+ * Public roster: anon Inscribir (guest), logged-in Inscribirme + Promoverme (US-009).
  */
 export function PlayerRoster({
   callupId,
@@ -57,9 +61,9 @@ export function PlayerRoster({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, startTransition] = useTransition();
-  const [waitlistPrompt, setWaitlistPrompt] = useState<
-    null | { guestName: string; message: string }
-  >(null);
+  const [waitlistPrompt, setWaitlistPrompt] = useState<WaitlistPrompt | null>(
+    null,
+  );
   const [guestOpen, setGuestOpen] = useState(false);
   const [guestName, setGuestName] = useState("");
 
@@ -113,8 +117,8 @@ export function PlayerRoster({
       res.status === 409 &&
       body.code === ErrorCode.WAITLIST_CONFIRM_REQUIRED
     ) {
-      // Keep sheet open underneath; confirm dialog sits above (higher z-index).
       setWaitlistPrompt({
+        kind: "guest",
         guestName: name,
         message:
           body.detail ??
@@ -132,6 +136,34 @@ export function PlayerRoster({
     refresh();
   }
 
+  async function postSubscribe(acceptWaitlist: boolean) {
+    const res = await fetch(`/api/v1/callups/${callupId}/players/subscribe`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ acceptWaitlist }),
+    });
+    const body = (await res.json().catch(() => ({}))) as ProblemBody;
+    if (
+      res.status === 409 &&
+      body.code === ErrorCode.WAITLIST_CONFIRM_REQUIRED
+    ) {
+      setWaitlistPrompt({
+        kind: "self",
+        message:
+          body.detail ??
+          "Lista llena, ¿deseas suscribirte a la lista de espera?",
+      });
+      return;
+    }
+    if (!res.ok) {
+      setError(body.detail ?? "No se pudo inscribir.");
+      return;
+    }
+    setWaitlistPrompt(null);
+    refresh();
+  }
+
   function onGuestSubmit(e: FormEvent) {
     e.preventDefault();
     const name = guestName.trim();
@@ -141,6 +173,12 @@ export function PlayerRoster({
     }
     startTransition(async () => {
       await postGuest(name, false);
+    });
+  }
+
+  function onInscribirme() {
+    startTransition(async () => {
+      await postSubscribe(false);
     });
   }
 
@@ -194,11 +232,19 @@ export function PlayerRoster({
   }
 
   const mutable = canMutateCallup(detail.status);
-  const canInscribir =
+  const eligibilityOk =
     mutable &&
     (detail.subscribeEligibility.canJoinRoster ||
       detail.subscribeEligibility.canJoinWaitlist);
   const rosterFree = detail.rosterCount < detail.spotsQuantity;
+
+  const alreadyEnrolled = Boolean(
+    sessionUserId &&
+      detail.players.some((p) => p.userId === sessionUserId),
+  );
+
+  const showGuestInscribir = !sessionUserId && eligibilityOk;
+  const showInscribirme = Boolean(sessionUserId) && !alreadyEnrolled && eligibilityOk;
 
   const roster = detail.players.filter((p) => !p.isWaitList);
   const waitlist = detail.players.filter((p) => p.isWaitList);
@@ -215,7 +261,7 @@ export function PlayerRoster({
         <h3 className="text-sm font-semibold text-[var(--kortumo-navy)]">
           Jugadores
         </h3>
-        {canInscribir ? (
+        {showGuestInscribir ? (
           <button
             type="button"
             onClick={() => {
@@ -225,6 +271,16 @@ export function PlayerRoster({
             className="h-8 shrink-0 rounded-md bg-[var(--kortumo-red)] px-2.5 text-xs font-semibold text-white"
           >
             + Inscribir
+          </button>
+        ) : null}
+        {showInscribirme ? (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={onInscribirme}
+            className="h-8 shrink-0 rounded-md bg-[var(--kortumo-red)] px-2.5 text-xs font-semibold text-white disabled:opacity-60"
+          >
+            Inscribirme
           </button>
         ) : null}
       </div>
@@ -321,7 +377,11 @@ export function PlayerRoster({
           const prompt = waitlistPrompt;
           if (!prompt) return;
           startTransition(async () => {
-            await postGuest(prompt.guestName, true);
+            if (prompt.kind === "guest") {
+              await postGuest(prompt.guestName, true);
+            } else {
+              await postSubscribe(true);
+            }
           });
         }}
       />
@@ -371,7 +431,6 @@ function PlayerTable({
             className={`${ROW_GRID} border-b border-[var(--kortumo-navy)]/10 bg-[var(--kortumo-navy)]/[0.04] text-sm`}
             role="row"
           >
-            {/* Keep an in-flow cell (not sr-only) so grid columns stay aligned */}
             <span className="block" aria-hidden>
               &nbsp;
             </span>
