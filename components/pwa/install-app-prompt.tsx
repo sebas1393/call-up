@@ -119,7 +119,7 @@ export function InstallAppPrompt({
 
       <BottomSheet
         open={sheetOpen}
-        title="Agregar Kortumo a inicio"
+        title="Agregar Kall-UP a inicio"
         onClose={() => setSheetOpen(false)}
       >
         {ios ? (
@@ -155,7 +155,7 @@ export function InstallAppPrompt({
               </li>
             </ol>
             <p className="mt-3 text-xs leading-relaxed text-[var(--kortumo-navy)]/60">
-              Si no ves la opción, abre Kortumo en Chrome (no en el navegador
+              Si no ves la opción, abre Kall-UP en Chrome (no en el navegador
               interno de otra app) y vuelve a intentar.
             </p>
           </>

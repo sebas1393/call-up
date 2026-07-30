@@ -19,13 +19,13 @@ const openSans = Open_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Kortumo",
+  title: "Kall-UP",
   description:
     "Convocatorias deportivas: crea partidos, suscríbete y recibe avisos.",
-  applicationName: "Kortumo",
+  applicationName: "Kall-UP",
   appleWebApp: {
     capable: true,
-    title: "Kortumo",
+    title: "Kall-UP",
     statusBarStyle: "default",
   },
   formatDetection: {

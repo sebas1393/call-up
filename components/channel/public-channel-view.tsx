@@ -157,22 +157,22 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
       </header>
 
       <main className="mx-auto flex w-full max-w-lg min-w-0 flex-1 flex-col gap-5 overflow-x-hidden px-4 py-6 sm:px-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--kortumo-navy)]/50">
-              Canal
-            </p>
-            <h1 className="font-[family-name:var(--font-montserrat)] text-2xl font-bold text-[var(--kortumo-navy)]">
-              /{slug}
-            </h1>
-            <p className="mt-1 text-sm text-[var(--kortumo-navy)]/70">
-              Convocatorias
-            </p>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wide text-[var(--kortumo-navy)]/50">
+                Canal
+              </p>
+              <h1 className="font-[family-name:var(--font-montserrat)] text-2xl font-bold text-[var(--kortumo-navy)]">
+                /{slug}
+              </h1>
+              <p className="mt-0.5 text-sm text-[var(--kortumo-navy)]/70">
+                Convocatorias
+              </p>
+            </div>
+            <InstallAppPrompt variant="onLight" className="shrink-0 pt-1" />
           </div>
-          <div className="flex flex-col items-stretch gap-2 sm:items-end">
-            <FollowButton userName={slug} isOwnChannel={isOwnChannel} />
-            <InstallAppPrompt variant="onLight" />
-          </div>
+          <FollowButton userName={slug} isOwnChannel={isOwnChannel} />
         </div>
 
         {loading && !data ? (

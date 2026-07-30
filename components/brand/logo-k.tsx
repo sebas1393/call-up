@@ -13,7 +13,7 @@ type LogoKProps = {
 };
 
 /**
- * Kortumo K mark (stand-in until Task 22 official vector).
+ * Kall-UP mark: K + ball accent (sports / convocatoria energy).
  */
 export function LogoK({
   size = 48,
@@ -38,7 +38,7 @@ export function LogoK({
       {withWordmark ? (
         <span
           className="font-[family-name:var(--font-montserrat)] font-bold tracking-tight text-inherit"
-          style={{ fontSize: Math.max(size * 0.42, 18) }}
+          style={{ fontSize: Math.max(size * 0.52, 22) }}
         >
           {KORTUMO_PRODUCT_NAME}
         </span>

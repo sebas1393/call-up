@@ -13,8 +13,8 @@ type FollowButtonProps = {
 type FollowState = "loading" | "idle" | "following" | "error";
 
 /**
- * Channel follow control — labels **Seguir** / **No Seguir** (US-011).
- * After successful Seguir (201), requests notification permission + push subscribe.
+ * Channel follow — quiet text control (US-011), not a primary button.
+ * After successful follow, requests notification permission + push subscribe.
  */
 export function FollowButton({ userName, isOwnChannel = false }: FollowButtonProps) {
   const [state, setState] = useState<FollowState>("loading");
@@ -23,15 +23,18 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch(`/api/v1/callers/${encodeURIComponent(userName)}/follow`);
+      const res = await fetch(
+        `/api/v1/callers/${encodeURIComponent(userName)}/follow`,
+        { credentials: "include", cache: "no-store" },
+      );
       if (res.status === 401) {
         setState("idle");
-        setMessage("Inicia sesión para seguir este canal.");
+        setMessage(null);
         return;
       }
       if (!res.ok) {
         setState("error");
-        setMessage("No se pudo cargar el estado de seguimiento.");
+        setMessage("No se pudo cargar el seguimiento.");
         return;
       }
       const json = (await res.json()) as { data?: { following?: boolean } };
@@ -46,14 +49,12 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
   useEffect(() => {
     if (isOwnChannel) {
       setState("idle");
-      setMessage("No puedes seguir tu propio canal.");
+      setMessage(null);
       return;
     }
     void refresh();
   }, [isOwnChannel, refresh]);
 
-  // Spec §11.1: if already following, re-register push when permission already granted
-  // (e.g. user installed PWA after Seguir).
   useEffect(() => {
     if (isOwnChannel || state !== "following") return;
     if (typeof Notification === "undefined") return;
@@ -68,7 +69,7 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
       try {
         const res = await fetch(
           `/api/v1/callers/${encodeURIComponent(userName)}/follow`,
-          { method: "POST" },
+          { method: "POST", credentials: "include" },
         );
 
         if (res.status === 403) {
@@ -77,18 +78,16 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
           return;
         }
         if (res.status === 401) {
-          setMessage("Inicia sesión para seguir este canal.");
+          setMessage("Inicia sesión para suscribirte al canal.");
           return;
         }
         if (!res.ok) {
-          setMessage("No se pudo seguir el canal.");
+          setMessage("No se pudo suscribir al canal.");
           return;
         }
 
         setState("following");
 
-        // Spec §11: after Seguir success, request permission + register push.
-        // Follow stays valid if permission is denied.
         if (res.status === 201 || res.status === 200) {
           const push = await subscribePushAndRegister();
           if (!push.ok) {
@@ -109,10 +108,10 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
       try {
         const res = await fetch(
           `/api/v1/callers/${encodeURIComponent(userName)}/follow`,
-          { method: "DELETE" },
+          { method: "DELETE", credentials: "include" },
         );
         if (!res.ok && res.status !== 204) {
-          setMessage("No se pudo dejar de seguir.");
+          setMessage("No se pudo cancelar la suscripción.");
           return;
         }
         setState("idle");
@@ -123,29 +122,46 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
   };
 
   if (isOwnChannel) {
-    return (
-      <p className="text-sm text-[var(--kortumo-navy)]/65" role="status">
-        No puedes seguir tu propio canal.
-      </p>
-    );
+    return null;
   }
 
   const busy = pending || state === "loading";
   const following = state === "following";
 
   return (
-    <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        disabled={busy}
-        onClick={following ? onUnfollow : onFollow}
-        className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--kortumo-navy)] px-4 text-sm font-medium text-white transition-opacity hover:bg-[var(--kortumo-blue-soft)] disabled:opacity-60"
-        aria-busy={busy}
-      >
-        {busy ? "…" : following ? "No Seguir" : "Seguir"}
-      </button>
+    <div className="max-w-md space-y-1">
+      {following ? (
+        <p className="text-xs leading-snug text-[var(--kortumo-navy)]/65">
+          Suscrito a{" "}
+          <span className="font-medium text-[var(--kortumo-navy)]/80">
+            /{userName}
+          </span>
+          .{" "}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onUnfollow}
+            className="font-medium text-[var(--kortumo-blue-soft)] underline-offset-2 hover:underline disabled:opacity-60"
+            aria-busy={busy}
+          >
+            {busy ? "…" : "Dejar de seguir"}
+          </button>
+        </p>
+      ) : (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onFollow}
+          className="text-left text-xs leading-snug text-[var(--kortumo-blue-soft)] underline-offset-2 hover:underline disabled:opacity-60"
+          aria-busy={busy}
+        >
+          {busy
+            ? "…"
+            : `Suscríbete al canal de ${userName} para recibir actualizaciones de las convocatorias`}
+        </button>
+      )}
       {message ? (
-        <p className="text-sm text-[var(--kortumo-navy)]/65" role="status">
+        <p className="text-[11px] leading-snug text-[var(--kortumo-navy)]/55" role="status">
           {message}
         </p>
       ) : null}

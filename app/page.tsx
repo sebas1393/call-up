@@ -7,7 +7,7 @@ import {
 } from "@/lib/brand/kortumo";
 
 /**
- * US-001 landing — brand-first hero (Kortumo), role CTAs, coming-soon below fold.
+ * US-001 landing — brand-first hero (Kall-UP), role CTAs, coming-soon below fold.
  * Ready callers are redirected to `/caller` (US-001/002 / Task 28).
  */
 export default function HomePage() {
@@ -43,15 +43,15 @@ export default function HomePage() {
 
         <div className="relative z-10 flex flex-1 flex-col px-5 pb-10 pt-8 sm:px-8 sm:pb-14 sm:pt-10">
           <header className="animate-[kortumo-fade-in_0.7s_ease-out_both]">
-            <LogoK size={56} withWordmark priority className="text-white" />
-            <p className="mt-2 text-sm font-light tracking-wide text-[var(--kortumo-blue-soft)]">
+            <LogoK size={88} withWordmark priority className="text-white" />
+            <p className="mt-4 font-[family-name:var(--font-montserrat)] text-xl font-semibold tracking-wide text-white sm:text-2xl">
               {KORTUMO_PRODUCT_SUBTITLE}
             </p>
           </header>
 
-          <div className="mt-auto flex max-w-xl flex-col gap-6 pt-16 sm:pt-20">
-            <h1 className="animate-[kortumo-rise_0.8s_ease-out_0.12s_both] font-[family-name:var(--font-montserrat)] text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
-              Convocatorias en vivo, sin el caos del chat
+          <div className="mt-auto flex max-w-xl flex-col gap-6 pt-12 sm:pt-16">
+            <h1 className="animate-[kortumo-rise_0.8s_ease-out_0.12s_both] font-[family-name:var(--font-montserrat)] text-2xl font-bold leading-tight tracking-tight text-white/95 sm:text-3xl">
+              En vivo, sin el caos del chat
             </h1>
             <p className="animate-[kortumo-rise_0.8s_ease-out_0.22s_both] max-w-md text-base leading-relaxed text-white/85 sm:text-lg">
               Organiza el partido, comparte tu enlace y mira quién se apunta en

@@ -2,7 +2,7 @@
 
 Source of truth for visual identity: **[`Brandbook-KORTUMO.pdf`](../../Brandbook-KORTUMO.pdf)** (repo root).
 
-The working project folder remains `call-up/`; **product name in UI = Kortumo**, mark = **K** (not “Call Up”).
+The working project folder remains `call-up/`; **product name in UI = Kall-UP**, mark = **K** + ball accent (convocatoria / deporte).
 
 ## Palette (brandbook swatches)
 
@@ -36,8 +36,8 @@ Palette is inspired by regulation multicancha colors (brandbook).
 
 | Path | Role |
 |------|------|
-| `public/brand/logo-k.svg` | App mark (K) for nav / PWA |
-| `public/icons/icon-192.png` / `icon-512.png` | PWA icons from K mark |
+| `public/brand/logo-k.svg` | App mark: K + ball (palette navy/teal/red/blueSoft) — sports energy |
+| `public/icons/icon-192.png` / `icon-512.png` | PWA icons (regenerate from mark when mark changes) |
 | `public/brand/reference/` | Imagery extracted from brandbook (hero / courts) |
 
 Code tokens: `lib/brand/kortumo.ts` + CSS variables in `app/globals.css`.

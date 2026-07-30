@@ -1,6 +1,6 @@
 /**
- * Kortumo brand tokens — sourced from `Brandbook-KORTUMO.pdf` (repo root).
- * Product UI uses **Kortumo** (K mark), not the working title "Call Up".
+ * Brand tokens — colors from `Brandbook-KORTUMO.pdf` (repo root).
+ * Product display name: **Kall-UP**.
  */
 
 export const KORTUMO_COLORS = {
@@ -34,5 +34,5 @@ export const KORTUMO_TAGLINES = [
   "Pensado para ti",
 ] as const;
 
-export const KORTUMO_PRODUCT_NAME = "Kortumo";
+export const KORTUMO_PRODUCT_NAME = "Kall-UP";
 export const KORTUMO_PRODUCT_SUBTITLE = "Convocatorias deportivas";

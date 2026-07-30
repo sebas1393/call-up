@@ -10,7 +10,7 @@
 
 self.addEventListener("push", function (event) {
   let data = {
-    title: "Kortumo",
+    title: "Kall-UP",
     body: "Tienes un aviso nuevo",
     url: "/",
     event: null,
@@ -26,8 +26,7 @@ self.addEventListener("push", function (event) {
     }
   }
 
-  const title = data.title || "Kortumo";
-  const options = {
+  const title = data.title || "Kall-UP";  const options = {
     body: data.body || "",
     icon: data.icon || "/icons/icon-192.png",
     badge: data.badge || "/icons/icon-192.png",

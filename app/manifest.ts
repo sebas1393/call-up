@@ -1,13 +1,13 @@
 import type { MetadataRoute } from "next";
 
 /**
- * Web App Manifest — Kortumo (Brandbook-KORTUMO).
+ * Web App Manifest — Kall-UP.
  * @see https://nextjs.org/docs/app/guides/progressive-web-apps
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Kortumo",
-    short_name: "Kortumo",
+    name: "Kall-UP",
+    short_name: "Kall-UP",
     description:
       "Convocatorias deportivas: crea partidos, suscríbete y recibe avisos.",
     // Open caller dashboard; session gate redirects to login if needed (US-001/002).
