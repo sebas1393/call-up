@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState, useTransition } from "react";
+import { FormEvent, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { createPortal } from "react-dom";
 
 import {
@@ -20,6 +20,10 @@ type CreateCourtModalProps = {
   onCreated: (court: CourtOption) => void;
 };
 
+function subscribeNoop() {
+  return () => {};
+}
+
 /**
  * US-003b: create court modal (nombre + dirección).
  * Portaled to document.body so it is not nested inside CallupForm's <form>.
@@ -33,18 +37,21 @@ export function CreateCourtModal({
   const [address, setAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
   const nameRef = useRef<HTMLInputElement>(null);
+  const [wasOpen, setWasOpen] = useState(open);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setName("");
+      setAddress("");
+      setError(null);
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
-    setName("");
-    setAddress("");
-    setError(null);
     const t = window.setTimeout(() => nameRef.current?.focus(), 50);
     return () => window.clearTimeout(t);
   }, [open]);

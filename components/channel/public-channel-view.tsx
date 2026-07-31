@@ -50,6 +50,7 @@ type PublicChannelViewProps = {
 export function PublicChannelView({ userName }: PublicChannelViewProps) {
   const [me, setMe] = useState<MeProfile | null | undefined>(undefined);
   const [pageIndex, setPageIndex] = useState(0);
+  const [loadingPage, setLoadingPage] = useState(0);
   const [data, setData] = useState<ListResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,12 +60,14 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
   const slug = userName.trim().toLowerCase();
   const isOwnChannel = Boolean(me?.userName && me.userName === slug);
 
+  if (loadingPage !== pageIndex) {
+    setLoadingPage(pageIndex);
+    setLoading(true);
+    setError(null);
+  }
+
   const load = useCallback(
     async (page: number, opts?: { soft?: boolean }) => {
-      if (!opts?.soft) {
-        setLoading(true);
-      }
-      setError(null);
       const res = await fetch(
         `/api/v1/callers/${encodeURIComponent(slug)}/callups?pageIndex=${page}&pageSize=10`,
         { credentials: "include", cache: "no-store" },
@@ -79,6 +82,7 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
         return;
       }
       const json = (await res.json()) as { data: ListResponse };
+      setError(null);
       setData(json.data);
       setLoading(false);
     },
@@ -106,7 +110,7 @@ export function PublicChannelView({ userName }: PublicChannelViewProps) {
   }, []);
 
   useEffect(() => {
-    void load(pageIndex);
+    void Promise.resolve().then(() => load(pageIndex));
   }, [load, pageIndex]);
 
   useCallupPlayersRealtime({

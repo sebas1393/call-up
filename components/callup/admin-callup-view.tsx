@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { fetchMe, googleAuthHref } from "@/components/auth/me-api";
 import { AdminRoster } from "@/components/callup/admin-roster";
@@ -39,15 +39,8 @@ export function AdminCallupView({ callupId }: AdminCallupViewProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const hasDetailRef = useRef(false);
 
   const load = useCallback(async () => {
-    const isInitial = !hasDetailRef.current;
-    if (isInitial) {
-      setLoading(true);
-    }
-    setError(null);
-
     const me = await fetchMe();
     if (!me.ok) {
       if (me.status === 401) {
@@ -93,13 +86,13 @@ export function AdminCallupView({ callupId }: AdminCallupViewProps) {
       return;
     }
 
-    hasDetailRef.current = true;
+    setError(null);
     setDetail(json.data);
     setLoading(false);
   }, [callupId, router]);
 
   useEffect(() => {
-    void load();
+    void Promise.resolve().then(() => load());
   }, [load]);
 
   async function copyKey() {

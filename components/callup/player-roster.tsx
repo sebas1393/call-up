@@ -72,7 +72,6 @@ export function PlayerRoster({
   const [guestName, setGuestName] = useState("");
 
   const load = useCallback(async () => {
-    setError(null);
     const res = await fetch(`/api/v1/callups/${callupId}`, {
       credentials: "include",
       cache: "no-store",
@@ -84,12 +83,13 @@ export function PlayerRoster({
       return;
     }
     const json = (await res.json()) as { data: CallupDetail };
+    setError(null);
     setDetail(json.data);
     setLoading(false);
   }, [callupId]);
 
   useEffect(() => {
-    void load();
+    void Promise.resolve().then(() => load());
   }, [load]);
 
   useCallupPlayersRealtime({

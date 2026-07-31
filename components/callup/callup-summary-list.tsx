@@ -39,6 +39,7 @@ type MineResponse = {
  */
 export function CallupSummaryList() {
   const [pageIndex, setPageIndex] = useState(0);
+  const [loadingPage, setLoadingPage] = useState(0);
   const [data, setData] = useState<MineResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,11 +48,13 @@ export function CallupSummaryList() {
   const [copyFlash, setCopyFlash] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const load = useCallback(async (page: number, opts?: { soft?: boolean }) => {
-    if (!opts?.soft) {
-      setLoading(true);
-    }
+  if (loadingPage !== pageIndex) {
+    setLoadingPage(pageIndex);
+    setLoading(true);
     setError(null);
+  }
+
+  const load = useCallback(async (page: number) => {
     const res = await fetch(
       `/api/v1/callups/mine?pageIndex=${page}&pageSize=10`,
       { credentials: "include", cache: "no-store" },
@@ -63,19 +66,20 @@ export function CallupSummaryList() {
       return;
     }
     const json = (await res.json()) as { data: MineResponse };
+    setError(null);
     setData(json.data);
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    void load(pageIndex);
+    void Promise.resolve().then(() => load(pageIndex));
   }, [load, pageIndex]);
 
   useCallupPlayersRealtime({
     callupIds: data?.items.map((i) => i.id) ?? [],
     enabled: Boolean(data && data.items.length > 0),
     onChange: () => {
-      void load(pageIndex, { soft: true });
+      void load(pageIndex);
     },
   });
 

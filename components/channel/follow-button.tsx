@@ -47,12 +47,8 @@ export function FollowButton({ userName, isOwnChannel = false }: FollowButtonPro
   }, [userName]);
 
   useEffect(() => {
-    if (isOwnChannel) {
-      setState("idle");
-      setMessage(null);
-      return;
-    }
-    void refresh();
+    if (isOwnChannel) return;
+    void Promise.resolve().then(() => refresh());
   }, [isOwnChannel, refresh]);
 
   useEffect(() => {

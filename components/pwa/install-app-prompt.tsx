@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import {
@@ -12,7 +12,6 @@ import {
   isInstallPromptDismissed,
   isIosLike,
   isStandaloneDisplay,
-  type BeforeInstallPromptEvent,
 } from "@/lib/pwa/install-app";
 
 type InstallAppPromptProps = {
@@ -20,6 +19,10 @@ type InstallAppPromptProps = {
   variant?: "onDark" | "onLight";
   className?: string;
 };
+
+function subscribeNoop() {
+  return () => {};
+}
 
 function shouldShowInstallCta(): boolean {
   if (typeof window === "undefined") return false;
@@ -35,43 +38,33 @@ export function InstallAppPrompt({
   variant = "onLight",
   className = "",
 }: InstallAppPromptProps) {
-  const [visible, setVisible] = useState(false);
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
-    null,
+  const eligible = useSyncExternalStore(
+    subscribeNoop,
+    shouldShowInstallCta,
+    () => false,
   );
+  const [dismissed, setDismissed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
     captureBeforeInstallPrompt();
-    if (!shouldShowInstallCta()) return;
-    setVisible(true);
-    setDeferred(getDeferredInstallPrompt());
-
-    function onBip() {
-      setDeferred(getDeferredInstallPrompt());
-    }
-    window.addEventListener("kortumo-bip", onBip);
-    return () => {
-      window.removeEventListener("kortumo-bip", onBip);
-    };
   }, []);
 
   const hide = useCallback(() => {
     dismissInstallPrompt();
-    setVisible(false);
+    setDismissed(true);
     setSheetOpen(false);
   }, []);
 
   async function onInstallClick() {
-    const promptEvent = deferred ?? getDeferredInstallPrompt();
+    const promptEvent = getDeferredInstallPrompt();
     if (promptEvent) {
       setPending(true);
       try {
         await promptEvent.prompt();
         await promptEvent.userChoice;
         clearDeferredInstallPrompt();
-        setDeferred(null);
         hide();
       } catch {
         /* user cancelled or browser error — keep CTA */
@@ -84,7 +77,7 @@ export function InstallAppPrompt({
     setSheetOpen(true);
   }
 
-  if (!visible) return null;
+  if (!eligible || dismissed) return null;
 
   const ios = isIosLike();
   const android = isAndroidLike();
@@ -162,16 +155,12 @@ export function InstallAppPrompt({
         ) : (
           <>
             <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[var(--kortumo-navy)]/85">
-              <li>
-                Abre el menú del navegador (⋮ o ≡).
-              </li>
+              <li>Abre el menú del navegador (⋮ o ≡).</li>
               <li>
                 Elige <strong>Instalar</strong> /{" "}
                 <strong>Agregar a la pantalla de inicio</strong>.
               </li>
-              <li>
-                Confirma.
-              </li>
+              <li>Confirma.</li>
             </ol>
             <p className="mt-3 text-xs leading-relaxed text-[var(--kortumo-navy)]/60">
               En Chrome de escritorio también puedes usar el icono de instalar

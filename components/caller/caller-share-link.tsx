@@ -1,20 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { fetchMe } from "@/components/auth/me-api";
+
+function subscribeNoop() {
+  return () => {};
+}
 
 /**
  * US-007: visible share link for the caller's public channel (`/{userName}`).
  */
 export function CallerShareLink() {
   const [userName, setUserName] = useState<string | null>(null);
-  const [origin, setOrigin] = useState("");
+  const origin = useSyncExternalStore(
+    subscribeNoop,
+    () => window.location.origin,
+    () => "",
+  );
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setOrigin(window.location.origin);
     let cancelled = false;
     (async () => {
       const result = await fetchMe();

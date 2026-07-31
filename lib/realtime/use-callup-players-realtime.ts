@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useEffectEvent, useId } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { createSupabaseBrowserClient } from "@/lib/db/supabase-browser";
@@ -29,8 +29,7 @@ export function useCallupPlayersRealtime({
   onChange,
   enabled = true,
 }: UseCallupPlayersRealtimeOptions): void {
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  const onChangeEvent = useEffectEvent(onChange);
   const idsKey = callupIds.slice().sort().join(",");
   const instanceId = useId().replace(/:/g, "");
 
@@ -50,7 +49,7 @@ export function useCallupPlayersRealtime({
         window.clearTimeout(debounceTimer);
       }
       debounceTimer = window.setTimeout(() => {
-        onChangeRef.current();
+        onChangeEvent();
       }, 150);
     }
 

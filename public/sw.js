@@ -6,8 +6,6 @@
  * Registration is wired in Task 16 (`navigator.serviceWorker.register('/sw.js')`).
  */
 
-/* eslint-disable no-undef -- service worker global scope */
-
 self.addEventListener("push", function (event) {
   let data = {
     title: "Kall-UP",

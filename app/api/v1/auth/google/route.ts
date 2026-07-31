@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 
 import { ErrorCode } from "@/lib/constants/error-codes";
-import { jsonProblem, unauthorized } from "@/lib/api/http";
+import { jsonProblem } from "@/lib/api/http";
 import { createSupabaseServerClient } from "@/lib/db/supabase-server";
 import { getSupabasePublicEnv } from "@/lib/db/env";
 

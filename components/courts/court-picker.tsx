@@ -18,24 +18,24 @@ type CourtPickerProps = {
  */
 export function CourtPicker({ value, onChange }: CourtPickerProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<CourtOption[]>([]);
+  const [fetchedResults, setFetchedResults] = useState<CourtOption[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [linkPending, startLink] = useTransition();
 
+  const q = query.trim();
+  const canSearch = q.length >= COURT_SEARCH_MIN_LENGTH;
+  const results = canSearch ? fetchedResults : [];
+  const showSearching = canSearch && searching;
+  const showError = canSearch ? searchError : null;
+
   useEffect(() => {
-    const q = query.trim();
-    if (q.length < COURT_SEARCH_MIN_LENGTH) {
-      setResults([]);
-      setSearchError(null);
-      setSearching(false);
-      return;
-    }
+    if (!canSearch) return;
 
     let cancelled = false;
-    setSearching(true);
     const timer = window.setTimeout(async () => {
+      setSearching(true);
       const res = await fetch(
         `/api/v1/courts?search=${encodeURIComponent(q)}`,
         { credentials: "include" },
@@ -44,14 +44,14 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
         setSearchError(body.detail ?? "No se pudo buscar.");
-        setResults([]);
+        setFetchedResults([]);
         setSearching(false);
         return;
       }
       const json = (await res.json()) as {
         data: { items: CourtOption[] };
       };
-      setResults(json.data.items);
+      setFetchedResults(json.data.items);
       setSearchError(null);
       setSearching(false);
     }, 300);
@@ -60,7 +60,7 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [query]);
+  }, [canSearch, q]);
 
   function selectCourt(court: CourtOption) {
     startLink(async () => {
@@ -75,7 +75,7 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
       }
       onChange(court);
       setQuery("");
-      setResults([]);
+      setFetchedResults([]);
     });
   }
 
@@ -131,12 +131,12 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
             Mínimo {COURT_SEARCH_MIN_LENGTH} caracteres. Al elegir, se vincula a
             tu cuenta.
           </p>
-          {searching ? (
+          {showSearching ? (
             <p className="text-xs text-[var(--kortumo-navy)]/50">Buscando…</p>
           ) : null}
-          {searchError ? (
+          {showError ? (
             <p className="text-sm text-[var(--kortumo-red)]" role="alert">
-              {searchError}
+              {showError}
             </p>
           ) : null}
           {results.length > 0 ? (
@@ -160,10 +160,10 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
               ))}
             </ul>
           ) : null}
-          {!searching &&
-          query.trim().length >= COURT_SEARCH_MIN_LENGTH &&
+          {!showSearching &&
+          canSearch &&
           results.length === 0 &&
-          !searchError ? (
+          !showError ? (
             <p className="text-xs text-[var(--kortumo-navy)]/55">
               Sin resultados. Podés crear la cancha.
             </p>
@@ -177,7 +177,7 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
         onCreated={(court) => {
           onChange(court);
           setQuery("");
-          setResults([]);
+          setFetchedResults([]);
         }}
       />
     </div>
